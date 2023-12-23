@@ -2,9 +2,12 @@ import cv2
 import numpy as np
 import torch
 import face_recognition
+import preprocessing
+import time
+import psutil
 
 # Constants
-WEIGHTS_PATH = './face_detection_yolov5s.pt'
+WEIGHTS_PATH = './last.pt'
 REFERENCE_IMAGE_PATH = './seif2.jpg'
 COLOR_MATCH = (0, 255, 0)
 COLOR_NO_MATCH = (0, 0, 255)
@@ -12,7 +15,9 @@ FONT = cv2.FONT_HERSHEY_SIMPLEX
 
 def load_yolo_model(weights_path):
     try:
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         yolo = torch.hub.load('ultralytics/yolov5', 'custom', path=weights_path)
+        yolo.to(device).eval()
         return yolo
     except Exception as e:
         print(f"Error loading YOLO model: {e}")
@@ -24,7 +29,7 @@ def compare_faces(reference_encoding, face_encodings):
     return matches
 
 def detect_faces(frame, yolo_model, reference_encoding):
-    # Detect faces using YOLO
+    frame = preprocessing.apply_gaussian_blur(frame)
     results = yolo_model(frame)
 
     # Draw bounding boxes around faces
@@ -36,7 +41,6 @@ def detect_faces(frame, yolo_model, reference_encoding):
             # Use face recognition to compare with the reference image
             matches = compare_faces(reference_encoding, face_recognition.face_encodings(frame, [(y1, x2, y2, x1)]))
 
-            # Draw bounding box only if there is a match
             if matches[0]:
                 cv2.rectangle(frame, (x1, y1), (x2, y2), COLOR_MATCH, 2)
                 label = "Match"
@@ -44,7 +48,6 @@ def detect_faces(frame, yolo_model, reference_encoding):
                 cv2.rectangle(frame, (x1, y1), (x2, y2), COLOR_NO_MATCH, 2)
                 label = "No Match"
 
-            # Display result
             cv2.putText(frame, label, (x1, y1 - 10), FONT, 0.5, (255, 255, 255), 2)
 
     return frame
@@ -62,11 +65,21 @@ def main():
 
     try:
         while True:
+            start_time = time.time()
+
             ret, frame = cap.read()
 
             # Detect faces and perform face recognition
             detected_frame = detect_faces(frame, yolo_model, reference_encoding)
             cv2.imshow('Face Recognition', detected_frame)
+
+            end_time = time.time()
+            processing_time = end_time - start_time
+            fps = 1 / processing_time
+
+            cpu_usage = psutil.cpu_percent()
+
+            print(f"FPS: {fps:.2f}, Processing Time: {processing_time:.5f} seconds, CPU Usage: {cpu_usage}%")
 
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
