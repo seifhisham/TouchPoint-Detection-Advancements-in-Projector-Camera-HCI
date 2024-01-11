@@ -12,6 +12,7 @@ class VirtualMouse:
         self.cap.set(4, 480)
 
         self.detector = ht.handDetector(maxHands=1)
+        self.prev_fingers_touching = False  # Flag to track finger touching status
 
     def hand_tracking_loop(self):
         pTime = 0
@@ -57,9 +58,12 @@ class VirtualMouse:
                 if fingers[1] == 1 and fingers[2] == 1:
                     length, img, lineInfo = self.detector.findDistance(8, 12, img)
 
-                    if length < 40:
+                    if length < 40 and not self.prev_fingers_touching:
                         cv2.circle(img, (lineInfo[4], lineInfo[5]), 15, (0, 255, 0), cv2.FILLED)
                         autopy.mouse.click()
+                        self.prev_fingers_touching = True
+                    elif length >= 40:
+                        self.prev_fingers_touching = False  # Reset the flag when fingers are not touching
 
             cTime = time.time()
             fps = 1 / (cTime - pTime)
