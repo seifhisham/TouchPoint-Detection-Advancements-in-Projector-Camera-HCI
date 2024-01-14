@@ -14,11 +14,14 @@ class VirtualMouse:
         self.detector = ht.handDetector(maxHands=1)
         self.prev_fingers_touching = False  # Flag to track finger touching status
 
+    def set_smoothening(self, value):
+        self.smoothening = value
+
     def hand_tracking_loop(self):
         pTime = 0
         width, height = 640, 480
         frameR = 100
-        smoothening = 8
+        smoothening = 8 # Default smoothening factor
         prev_x, prev_y = 0, 0
         curr_x, curr_y = 0, 0
         roi_radius = 50
