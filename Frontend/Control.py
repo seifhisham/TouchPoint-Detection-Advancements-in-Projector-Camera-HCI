@@ -6,6 +6,7 @@ import numpy as np
 from Virtual_Mouse import VirtualMouse
 from FaceDetection import FaceRecognitionApp
 
+
 class TrackingThread(QThread):
     frame_processed = pyqtSignal(np.ndarray)
 
@@ -15,6 +16,7 @@ class TrackingThread(QThread):
 
     def run(self):
         self.virtual_mouse.hand_tracking_loop()
+
 
 class FaceRecognitionThread(QThread):
     frame_processed = pyqtSignal(np.ndarray)
@@ -26,18 +28,24 @@ class FaceRecognitionThread(QThread):
     def run(self):
         self.face_app.run_face_recognition()
 
+
 class HandTrackingApp(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Hand Tracking App")
+        self.setGeometry(100, 100, 1000, 700)  # Increased size
+        self.setStyleSheet("background-color: #F5F5F5;")  # Changed background color
 
-        self.start_button = QPushButton("Start", self)
-        self.start_button.clicked.connect(self.start_hand_tracking)
-
-        self.face_detection_button = QPushButton("Face Detection", self)
-        self.face_detection_button.clicked.connect(self.run_face_detection)
-
+        self.start_button = QPushButton("Start Hand Tracking", self)
+        self.face_detection_button = QPushButton("Run Face Detection", self)
         self.stop_button = QPushButton("Stop", self)
+
+        self.start_button.setStyleSheet("background-color: #3498db; color: white;")
+        self.face_detection_button.setStyleSheet("background-color: #2ecc71; color: white;")
+        self.stop_button.setStyleSheet("background-color: #e74c3c; color: white;")
+
+        self.start_button.clicked.connect(self.start_hand_tracking)
+        self.face_detection_button.clicked.connect(self.run_face_detection)
         self.stop_button.clicked.connect(self.stop_hand_tracking)
 
         self.image_label = QLabel(self)
@@ -45,9 +53,9 @@ class HandTrackingApp(QWidget):
 
         # Add a slider for adjusting smoothening
         self.smoothening_slider = QSlider(Qt.Horizontal)
-        self.smoothening_slider.setRange(1, 20)  # Adjust the range as needed
-        self.smoothening_slider.setValue(8)  # Set the initial value
-        self.smoothening_slider.valueChanged.connect(self.update_smoothening)
+        self.smoothening_slider.setRange(1, 20)
+        self.smoothening_slider.setValue(8)
+        self.smoothening_slider.setStyleSheet("QSlider::handle:horizontal { background-color: #3498db; }")
 
         # radio buttons for camera mode selection
         self.laptop_camera_radio = QRadioButton("Laptop Camera", self)
@@ -114,13 +122,11 @@ class HandTrackingApp(QWidget):
 
     def run_face_detection(self):
         try:
-            # Run the face detection and comparison code
-            self.is_tracking = False  # Pause hand tracking while face detection is running
+            self.is_tracking = False
             if self.tracking_thread:
                 self.tracking_thread.quit()
                 self.tracking_thread.wait()
 
-            # Run face detection and comparison
             self.face_thread = FaceRecognitionThread(self.face_app)
             self.face_thread.frame_processed.connect(self.update_frame)
             self.face_thread.finished.connect(self.run_face_detection)
