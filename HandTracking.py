@@ -19,6 +19,9 @@ class handDetector():
         self.mpDraw = mp.solutions.drawing_utils
         self.tipIds = [4, 8, 12, 16, 20]
 
+
+    def set_mobile_camera_mode(self):
+        self.virtual_mouse.set_mobile_camera_mode()
     def findHands(self, img, draw=True):  # Finds all hands in a frame
         imgRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 

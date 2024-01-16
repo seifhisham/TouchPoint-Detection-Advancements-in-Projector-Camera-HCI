@@ -9,6 +9,7 @@ from PyQt5.QtCore import pyqtSignal, QObject
 
 class FaceRecognitionApp(QObject):
     frame_processed = pyqtSignal(np.ndarray)
+    result_updated = pyqtSignal(bool)
     def __init__(self, weights_path='./last.pt', reference_image_path='./seif2.jpg'):
         super().__init__()
         self.weights_path = weights_path
@@ -52,6 +53,9 @@ class FaceRecognitionApp(QObject):
                 else:
                     cv2.rectangle(frame, (x1, y1), (x2, y2), self.COLOR_NO_MATCH, 2)
                     label = "No Match"
+
+                print(f"Face at ({x1}, {y1}) - ({x2}, {y2}): {label}")
+                self.result_updated.emit(matches[0])
 
                 cv2.putText(frame, label, (x1, y1 - 10), self.FONT, 0.5, (255, 255, 255), 2)
 

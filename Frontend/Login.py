@@ -38,6 +38,9 @@ class LoginApp(QWidget):
 
         layout.setSpacing(10)
 
+        with open("./Frontend/Styles.qss", "r") as stylesheet_file:
+            self.setStyleSheet(stylesheet_file.read())
+
     def login(self):
         username = self.username_input.text()
         password = self.password_input.text()
