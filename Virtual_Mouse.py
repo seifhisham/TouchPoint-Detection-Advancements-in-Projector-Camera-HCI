@@ -7,12 +7,29 @@ import autopy
 class VirtualMouse:
     def __init__(self, app):
         self.app = app
-        self.cap = cv2.VideoCapture(0)
-        self.cap.set(3, 640)
-        self.cap.set(4, 480)
+        self.camera_mode = "laptop"  # Default camera mode
+        self.cap = None
+        self.set_camera()
+        # self.cap.set(3, 640)
+        # self.cap.set(4, 480)
 
         self.detector = ht.handDetector(maxHands=1)
         self.prev_fingers_touching = False  # Flag to track finger touching status
+
+    def set_camera_mode(self, mode):
+        self.camera_mode = mode
+        self.set_camera()
+
+    def set_camera(self):
+        if self.camera_mode == "laptop":
+            self.cap = cv2.VideoCapture(0)
+        elif self.camera_mode == "mobile":
+            self.cap = cv2.VideoCapture(1)
+
+        if self.cap is not None and not self.cap.isOpened():
+            print("Error: Could not open mobile camera.")
+            self.camera_mode = "laptop"
+            self.cap = cv2.VideoCapture(0)
 
     def set_smoothening(self, value):
         self.smoothening = value
@@ -61,11 +78,11 @@ class VirtualMouse:
                 if fingers[1] == 1 and fingers[2] == 1:
                     length, img, lineInfo = self.detector.findDistance(8, 12, img)
 
-                    if length < 40 and not self.prev_fingers_touching:
+                    if length < 45 and not self.prev_fingers_touching:
                         cv2.circle(img, (lineInfo[4], lineInfo[5]), 15, (0, 255, 0), cv2.FILLED)
                         autopy.mouse.click()
                         self.prev_fingers_touching = True
-                    elif length >= 40:
+                    elif length >= 45:
                         self.prev_fingers_touching = False  # Reset the flag when fingers are not touching
 
             cTime = time.time()

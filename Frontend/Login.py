@@ -33,6 +33,9 @@ class LoginApp(QWidget):
         # Add some spacing between widgets
         layout.setSpacing(10)
 
+        with open("./Frontend/Styles.qss", "r") as stylesheet_file:
+            self.setStyleSheet(stylesheet_file.read())
+
     def login(self):
         # Add your authentication logic here
         username = self.username_input.text()

@@ -1,6 +1,6 @@
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QPushButton, QLabel, QSlider
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QPushButton, QLabel, QSlider, QHBoxLayout, QRadioButton
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
-from PyQt5.QtGui import QImage, QPixmap
+from PyQt5.QtGui import QImage, QPixmap, QFont
 import cv2
 import numpy as np
 from Virtual_Mouse import VirtualMouse
@@ -41,17 +41,39 @@ class HandTrackingApp(QWidget):
         self.stop_button.clicked.connect(self.stop_hand_tracking)
 
         self.image_label = QLabel(self)
+        self.image_label.setAlignment(Qt.AlignCenter)  # Center align the image label
+
         # Add a slider for adjusting smoothening
         self.smoothening_slider = QSlider(Qt.Horizontal)
         self.smoothening_slider.setRange(1, 20)  # Adjust the range as needed
         self.smoothening_slider.setValue(8)  # Set the initial value
         self.smoothening_slider.valueChanged.connect(self.update_smoothening)
 
+        # radio buttons for camera mode selection
+        self.laptop_camera_radio = QRadioButton("Laptop Camera", self)
+        self.mobile_camera_radio = QRadioButton("Mobile Camera", self)
+
+        camera_mode_layout = QVBoxLayout()
+        camera_mode_layout.addWidget(self.laptop_camera_radio)
+        camera_mode_layout.addWidget(self.mobile_camera_radio)
+        camera_mode_layout.addStretch(1)
+
+        # Connect radio button signals
+        self.laptop_camera_radio.clicked.connect(self.set_laptop_camera_mode)
+        self.mobile_camera_radio.clicked.connect(self.set_mobile_camera_mode)
+
+        # Create a layout for buttons
+        buttons_layout = QHBoxLayout()
+        buttons_layout.addWidget(self.start_button)
+        buttons_layout.addWidget(self.face_detection_button)
+        buttons_layout.addWidget(self.stop_button)
+
+        # Create a vertical layout for the entire widget
         layout = QVBoxLayout(self)
-        layout.addWidget(self.start_button)
-        layout.addWidget(self.face_detection_button)
-        layout.addWidget(self.stop_button)
-        layout.addWidget(self.image_label)
+        layout.addWidget(QLabel("Camera Mode"))
+        layout.addLayout(camera_mode_layout)
+        layout.addLayout(buttons_layout)
+        layout.addWidget(self.image_label, 1)  # Allow image_label to expand
         layout.addWidget(QLabel("Smoothening Factor"))
         layout.addWidget(self.smoothening_slider)
 
@@ -60,8 +82,17 @@ class HandTrackingApp(QWidget):
 
         self.is_tracking = False
         self.tracking_thread = None
+        self.face_thread = None  # Initialize face thread to None
         self.face_app = FaceRecognitionApp()
 
+        with open("./Frontend/Styles.qss", "r") as stylesheet_file:
+            self.setStyleSheet(stylesheet_file.read())
+
+    def set_laptop_camera_mode(self):
+        self.virtual_mouse.set_camera_mode("laptop")
+
+    def set_mobile_camera_mode(self):
+        self.virtual_mouse.set_camera_mode("mobile")
     def start_hand_tracking(self):
         if not self.is_tracking:
             self.is_tracking = True
@@ -70,11 +101,16 @@ class HandTrackingApp(QWidget):
             self.tracking_thread.start()
 
     def stop_hand_tracking(self):
-        if self.current_thread:
+        if self.tracking_thread and self.tracking_thread.isRunning():
             self.is_tracking = False
-            self.current_thread.quit()
-            self.current_thread.wait()
-            self.close()
+            self.tracking_thread.quit()
+            self.tracking_thread.wait()
+        elif self.face_thread and self.face_thread.isRunning():
+            self.is_tracking = False
+            self.face_thread.quit()
+            self.face_thread.wait()
+        else:
+            print("No active threads to stop.")
 
     def run_face_detection(self):
         try:
@@ -90,7 +126,7 @@ class HandTrackingApp(QWidget):
             self.face_thread.finished.connect(self.run_face_detection)
             self.face_thread.start()
         except Exception as e:
-            print(f"An error occurred in run_face_detection: {e}")
+            print(f"An error occurred in face detection: {e}")
 
     def update_frame(self, frame):
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
