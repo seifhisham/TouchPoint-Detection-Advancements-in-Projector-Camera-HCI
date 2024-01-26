@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QPushButton, QLabel, QSlider, QHBoxLayout, QRadioButton
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QPushButton, QLabel, QSlider, QHBoxLayout, QRadioButton, QCheckBox
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtGui import QImage, QPixmap, QFont
 import cv2
@@ -61,6 +61,10 @@ class HandTrackingApp(QWidget):
         self.laptop_camera_radio = QRadioButton("Laptop Camera", self)
         self.mobile_camera_radio = QRadioButton("Mobile Camera", self)
 
+        self.homography_checkbox = QCheckBox("Use Homography Mapping", self)
+        self.homography_checkbox.setChecked(False)  # Default is disabled
+        self.homography_checkbox.stateChanged.connect(self.toggle_homography_mapping)
+
         camera_mode_layout = QVBoxLayout()
         camera_mode_layout.addWidget(self.laptop_camera_radio)
         camera_mode_layout.addWidget(self.mobile_camera_radio)
@@ -82,6 +86,7 @@ class HandTrackingApp(QWidget):
         layout.addLayout(camera_mode_layout)
         layout.addLayout(buttons_layout)
         layout.addWidget(self.image_label, 1)  # Allow image_label to expand
+        layout.addWidget(self.homography_checkbox)
         layout.addWidget(QLabel("Smoothening Factor"))
         layout.addWidget(self.smoothening_slider)
 
@@ -101,12 +106,24 @@ class HandTrackingApp(QWidget):
 
     def set_mobile_camera_mode(self):
         self.virtual_mouse.set_camera_mode("mobile")
+
+    def toggle_homography_mapping(self):
+        enabled = self.homography_checkbox.isChecked()
+        self.virtual_mouse.set_homography_mapping(enabled)
+
     def start_hand_tracking(self):
         if not self.is_tracking:
-            self.is_tracking = True
-            self.tracking_thread = TrackingThread(self.virtual_mouse)
-            self.tracking_thread.frame_processed.connect(self.update_frame)
-            self.tracking_thread.start()
+            try:
+                self.is_tracking = True
+                self.tracking_thread = TrackingThread(self.virtual_mouse)
+                self.tracking_thread.frame_processed.connect(self.update_frame)
+                self.tracking_thread.start()
+            except Exception as e:
+                print(f"An error occurred during hand tracking: {e}")
+
+    def calibrate_homography(self, calibration_image):
+        self.virtual_mouse.screen_points = []  # Reset screen points
+        return self.virtual_mouse.calibrate_homography(calibration_image)
 
     def stop_hand_tracking(self):
         if self.tracking_thread and self.tracking_thread.isRunning():
@@ -122,7 +139,8 @@ class HandTrackingApp(QWidget):
 
     def run_face_detection(self):
         try:
-            self.is_tracking = False
+            # Run the face detection and comparison code
+            #self.is_tracking = False  # Pause hand tracking while face detection is running
             if self.tracking_thread:
                 self.tracking_thread.quit()
                 self.tracking_thread.wait()
