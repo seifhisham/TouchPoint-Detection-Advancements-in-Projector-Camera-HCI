@@ -6,6 +6,7 @@ import preprocessing
 import time
 import psutil
 from PyQt5.QtCore import pyqtSignal, QObject
+from camera_input import CameraInput
 
 class FaceRecognitionApp(QObject):
     frame_processed = pyqtSignal(np.ndarray)
@@ -16,6 +17,7 @@ class FaceRecognitionApp(QObject):
         self.reference_image_path = reference_image_path
         self.yolo_model = None
         self.reference_encoding = None
+        self.camera = CameraInput()
         self.cap = None
 
         # Constants
@@ -36,7 +38,7 @@ class FaceRecognitionApp(QObject):
         self.reference_encoding = face_recognition.face_encodings(reference_image)[0]
 
     def detect_faces(self, frame):
-        frame = preprocessing.apply_gaussian_blur(frame)
+        #frame = preprocessing.apply_gaussian_blur(frame)
         results = self.yolo_model(frame)
 
         if results is not None:
@@ -69,13 +71,14 @@ class FaceRecognitionApp(QObject):
         self.load_yolo_model()
         self.load_reference_encoding()
 
-        self.cap = cv2.VideoCapture(0)
+        self.camera.set_camera_mode("laptop")
+        self.camera.set_camera()
 
         try:
             while True:
                 start_time = time.time()
 
-                ret, frame = self.cap.read()
+                ret, frame = self.camera.read_frame()
 
                 detected_frame = self.detect_faces(frame)
                 self.frame_processed.emit(detected_frame)
@@ -93,7 +96,7 @@ class FaceRecognitionApp(QObject):
         except Exception as e:
             print(f"An error occurred: {e}")
         finally:
-            self.cap.release()
+            self.camera.release_camera()
             cv2.destroyAllWindows()
 
             self.finished.emit()

@@ -5,13 +5,15 @@ import autopy
 from HandTracking import handDetector
 from homography_mapping import calibrate_homography
 from preprocessing import preprocess_image
+from camera_input import CameraInput
 
 class VirtualMouse:
     def __init__(self, app):
         self.app = app
         self.camera_mode = "laptop"
-        self.cap = None
-        self.set_camera()
+        self.camera = CameraInput(camera_mode=self.camera_mode)
+        # self.cap = None
+        # self.set_camera()
         self.homography_enabled = False
         self.screen_points = []
         self.calibrated = False
@@ -28,18 +30,11 @@ class VirtualMouse:
 
     def set_camera_mode(self, mode):
         self.camera_mode = mode
-        self.set_camera()
+        self.camera.set_camera_mode(mode)
 
     def set_camera(self):
-        if self.camera_mode == "laptop":
-            self.cap = cv2.VideoCapture(0)
-        elif self.camera_mode == "mobile":
-            self.cap = cv2.VideoCapture(1)
-
-        if self.cap is not None and not self.cap.isOpened():
-            print("Error: Could not open the camera.")
-            self.camera_mode = "laptop"
-            self.cap = cv2.VideoCapture(0)
+        self.camera.set_camera()
+        self.calibrated = False
 
     def hand_tracking_loop(self):
         pTime = 0
@@ -54,7 +49,7 @@ class VirtualMouse:
         homography_matrix = None
 
         while self.app.is_tracking:
-            success, img = self.cap.read()
+            ret, img = self.camera.read_frame()
             img = self.detector.findHands(img)
             lmlist, bbox = self.detector.findPosition(img)
 
@@ -93,7 +88,7 @@ class VirtualMouse:
                     cv2.circle(img, (roi_center[0], roi_center[1]), 7, (255, 0, 255), cv2.FILLED)
                     prev_x, prev_y = curr_x, curr_y
 
-                if fingers[1] == 1 and fingers[2] == 1:
+                elif fingers[1] == 1 and fingers[2] == 1:
                     length, img, lineInfo = self.detector.findDistance(8, 12, img)
 
                     if length < 40 and not self.prev_fingers_touching:
@@ -102,6 +97,26 @@ class VirtualMouse:
                         self.prev_fingers_touching = True
                     elif length >= 40:
                         self.prev_fingers_touching = False
+
+                elif fingers[1] == 0 and fingers[2] == 0 and fingers[3] == 0 and fingers[4] == 0:
+                    autopy.mouse.toggle(autopy.mouse.Button.LEFT, True)
+
+                    if prev_x != 0 and prev_y != 0:
+                        x3 = np.interp(roi_center[0], (frameR, width - frameR), (0, screen_width))
+                        y3 = np.interp(roi_center[1], (frameR, height - frameR), (0, screen_height))
+
+                        curr_x = prev_x + (x3 - prev_x) / smoothening
+                        curr_y = prev_y + (y3 - prev_y) / smoothening
+
+                        autopy.mouse.move(screen_width - prev_x, prev_y)
+                        prev_x, prev_y = curr_x, curr_y
+
+                    # Check if fingers start touching again and stop the drag action
+                    elif fingers[1] == 1 or fingers[2] == 1 or fingers[3] == 1 or fingers[4] == 1:
+                        autopy.mouse.toggle(autopy.mouse.Button.LEFT, False)
+                else:
+                    autopy.mouse.toggle(autopy.mouse.Button.LEFT, False)
+
 
             cTime = time.time()
             fps = 1 / (cTime - pTime)
