@@ -131,13 +131,10 @@ class HandTrackingApp(QWidget):
 
     def run_face_detection(self):
         try:
-            # Run the face detection and comparison code
-            #self.is_tracking = False  # Pause hand tracking while face detection is running
-            if self.tracking_thread:
-                self.tracking_thread.quit()
-                self.tracking_thread.wait()
+            if self.face_thread and self.face_thread.isRunning():
+                # If face detection thread is already running, do nothing
+                return
 
-            # Run face detection and comparison
             self.face_thread = FaceRecognitionThread(self.face_app)
             self.face_thread.frame_processed.connect(self.update_frame)
             self.face_thread.finished.connect(self.run_face_detection)
