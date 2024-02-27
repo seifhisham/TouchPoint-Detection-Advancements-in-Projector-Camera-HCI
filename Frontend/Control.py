@@ -1,10 +1,11 @@
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QPushButton, QLabel, QSlider, QHBoxLayout, QRadioButton, QCheckBox
+from PyQt5.QtWidgets import QComboBox,QWidget, QVBoxLayout, QPushButton, QLabel, QSlider, QHBoxLayout, QRadioButton, QCheckBox
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtGui import QImage, QPixmap, QFont
 import cv2
 import numpy as np
 from Virtual_Mouse import VirtualMouse
 from FaceDetection import FaceRecognitionApp
+from Commands import gesture_mapping
 
 class TrackingThread(QThread):
     frame_processed = pyqtSignal(np.ndarray)
@@ -57,6 +58,13 @@ class HandTrackingApp(QWidget):
         self.homography_checkbox.setChecked(False)  # Default is disabled
         self.homography_checkbox.stateChanged.connect(self.toggle_homography_mapping)
 
+        self.mode_combobox1 = QComboBox(self)
+        self.mode_combobox2 = QComboBox(self)
+        self.mode_combobox3 = QComboBox(self)
+
+        # Populate ComboBoxes with available camera modes or other options
+        self.populate_comboboxes()
+
         camera_mode_layout = QVBoxLayout()
         camera_mode_layout.addWidget(self.laptop_camera_radio)
         camera_mode_layout.addWidget(self.mobile_camera_radio)
@@ -72,13 +80,26 @@ class HandTrackingApp(QWidget):
         buttons_layout.addWidget(self.face_detection_button)
         buttons_layout.addWidget(self.stop_button)
 
+        # Create a layout for combo boxes
+        combo_boxes_layout = QHBoxLayout()
+        combo_boxes_layout.addWidget(self.mode_combobox1)
+        combo_boxes_layout.addWidget(self.mode_combobox2)
+        combo_boxes_layout.addWidget(self.mode_combobox3)
+
         # Create a vertical layout for the entire widget
         layout = QVBoxLayout(self)
         layout.addWidget(QLabel("Camera Mode"))
         layout.addLayout(camera_mode_layout)
         layout.addLayout(buttons_layout)
+        layout.addLayout(combo_boxes_layout)  # Add combo boxes layout
         layout.addWidget(self.image_label, 1)  # Allow image_label to expand
         layout.addWidget(self.homography_checkbox)
+
+        # Connect ComboBox signals to appropriate slots
+        self.mode_combobox1.currentIndexChanged.connect(self.update_mode1)
+        self.mode_combobox2.currentIndexChanged.connect(self.update_mode2)
+        self.mode_combobox3.currentIndexChanged.connect(self.update_mode3)
+
         layout.addWidget(QLabel("Smoothening Factor"))
         layout.addWidget(self.smoothening_slider)
 
@@ -89,6 +110,10 @@ class HandTrackingApp(QWidget):
         self.tracking_thread = None
         self.face_thread = None  # Initialize face thread to None
         self.face_app = FaceRecognitionApp()
+
+        self.selected_gesture1 = None
+        self.selected_gesture2 = None
+        self.selected_gesture3 = None
 
         with open("./Frontend/Styles.qss", "r") as stylesheet_file:
             self.setStyleSheet(stylesheet_file.read())
@@ -152,3 +177,42 @@ class HandTrackingApp(QWidget):
 
     def update_smoothening(self, value):
         self.virtual_mouse.set_smoothening(value)
+
+    def populate_comboboxes(self):
+        # Add a default text to each ComboBox
+        default_text = "Select Gesture Command"
+        self.mode_combobox1.addItem(default_text)
+        self.mode_combobox2.addItem(default_text)
+        self.mode_combobox3.addItem(default_text)
+
+        # Populate ComboBoxes with available gesture commands
+        gesture_commands = list(gesture_mapping.keys())
+
+        self.mode_combobox1.addItems(gesture_commands)
+        self.mode_combobox2.addItems(gesture_commands)
+        self.mode_combobox3.addItems(gesture_commands)
+
+    def update_mode1(self, index):
+        self.selected_gesture1 = self.mode_combobox1.currentText()
+        self.virtual_mouse.set_selected_gesture(self.selected_gesture1)
+        # self.virtual_mouse.Combobox1_gesture()
+        self.update_mode(index, self.mode_combobox1)
+
+    def update_mode2(self, index):
+        self.selected_gesture2 = self.mode_combobox2.currentText()
+        self.virtual_mouse.set_selected_gesture(self.selected_gesture2)
+        # self.virtual_mouse.Combobox2_gesture()
+        self.update_mode(index, self.mode_combobox2)
+
+    def update_mode3(self, index):
+        self.selected_gesture3 = self.mode_combobox1.currentText()
+        self.virtual_mouse.set_selected_gesture(self.selected_gesture3)
+        # self.virtual_mouse.Combobox3_gesture()
+        self.update_mode(index, self.mode_combobox3)
+
+    def update_mode(self, index, combobox):
+        selected_gesture = combobox.currentText()
+
+        if selected_gesture != "Select Gesture Command":
+            # Handle logic based on the selected gesture
+            self.virtual_mouse.set_mode(selected_gesture)

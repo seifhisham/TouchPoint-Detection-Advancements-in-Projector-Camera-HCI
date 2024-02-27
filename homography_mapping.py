@@ -20,6 +20,7 @@ def calibrate_homography(img, screen_points):
         if cv2.waitKey(1) & 0xFF == 27:  # Break the loop on 'Esc' key
             break
 
+    screen_points.extend(screen_pts)
     # Define corresponding points in the image
     img_pts = np.array([[0, 0], [img.shape[1], 0], [img.shape[1], img.shape[0]], [0, img.shape[0]]], dtype=np.float32)
 

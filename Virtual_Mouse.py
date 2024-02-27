@@ -2,6 +2,8 @@ import cv2
 import numpy as np
 import time
 import autopy
+
+from Commands import gesture_mapping
 from HandTracking import handDetector
 from homography_mapping import calibrate_homography
 from preprocessing import preprocess_image
@@ -21,11 +23,14 @@ class VirtualMouse:
         self.detector = handDetector(maxHands=1)
         self.prev_fingers_touching = False
 
+        #self.mode = "Default"
+        self.selected_gesture = None
+        self.selected_mode = "Default"
+
     def set_homography_mapping(self, enabled):
         self.homography_enabled = enabled
 
     def calibrate_homography(self, calibration_image):
-        self.screen_points = []
         return calibrate_homography(calibration_image, self.screen_points)
 
     def set_camera_mode(self, mode):
@@ -36,6 +41,50 @@ class VirtualMouse:
         self.camera.set_camera()
         self.calibrated = False
 
+    def set_mode(self, mode):
+        self.mode = mode
+        # Depending on the mode, you may want to update settings or perform specific actions
+
+    def set_selected_gesture(self, selected_gesture):
+        self.selected_gesture = selected_gesture
+    def Combobox1_gesture(self):
+        print("three fingers")
+        print("selected_gesture:", self.selected_gesture)
+        if self.selected_gesture is not None:
+            print("Executing gesture command:", self.selected_gesture)
+            if self.selected_gesture in gesture_mapping:
+                gesture_mapping[self.selected_gesture]()
+                print("Gesture executed successfully.")
+            else:
+                print("Gesture not found in mapping.")
+        else:
+            print("No selected gesture.")
+
+    def Combobox2_gesture(self):
+        print("three fingers")
+        print("selected_gesture:", self.selected_gesture)
+        if self.selected_gesture is not None:
+            print("Executing gesture command:", self.selected_gesture)
+            if self.selected_gesture in gesture_mapping:
+                gesture_mapping[self.selected_gesture]()
+                print("Gesture executed successfully.")
+            else:
+                print("Gesture not found in mapping.")
+        else:
+            print("No selected gesture.")
+
+    def Combobox3_gesture(self):
+        print("three fingers")
+        print("selected_gesture:", self.selected_gesture)
+        if self.selected_gesture is not None:
+            print("Executing gesture command:", self.selected_gesture)
+            if self.selected_gesture in gesture_mapping:
+                gesture_mapping[self.selected_gesture]()
+                print("Gesture executed successfully.")
+            else:
+                print("Gesture not found in mapping.")
+        else:
+            print("No selected gesture.")
     def hand_tracking_loop(self):
         pTime = 0
         width, height = 640, 480
@@ -88,7 +137,7 @@ class VirtualMouse:
                     cv2.circle(img, (roi_center[0], roi_center[1]), 7, (255, 0, 255), cv2.FILLED)
                     prev_x, prev_y = curr_x, curr_y
 
-                elif fingers[1] == 1 and fingers[2] == 1:
+                elif fingers[1] == 1 and fingers[2] == 1 and fingers[3] == 0:
                     length, img, lineInfo = self.detector.findDistance(8, 12, img)
 
                     if length < 40 and not self.prev_fingers_touching:
@@ -114,6 +163,14 @@ class VirtualMouse:
                     # Check if fingers start touching again and stop the drag action
                     elif fingers[1] == 1 or fingers[2] == 1 or fingers[3] == 1 or fingers[4] == 1:
                         autopy.mouse.toggle(autopy.mouse.Button.LEFT, False)
+                #fifth gesture
+                elif fingers[1] == 1 and fingers[2] == 1 and fingers[3] == 1:
+                    try:
+                        self.Combobox1_gesture()
+                    except Exception as e:
+                        print(f"An error occurred in hand tracking loop: {e}")
+                # elif fingers[0] == 1 and fingers[5] == 1 and fingers[1] == 0 and fingers[2] == 0:
+                #     self.Combobox2_gesture()
                 else:
                     autopy.mouse.toggle(autopy.mouse.Button.LEFT, False)
 
