@@ -202,25 +202,36 @@ class HandTrackingApp(QWidget):
 
     def update_mode1(self, index):
         self.selected_gesture1 = self.mode_combobox1.currentText()
-        self.virtual_mouse.set_selected_gesture(self.selected_gesture1)
-        # self.virtual_mouse.Combobox1_gesture()
-        self.update_mode(index, self.mode_combobox1)
+        self.virtual_mouse.set_selected_gesture1(self.selected_gesture1)
+        self.virtual_mouse.Combobox1_gesture()
 
     def update_mode2(self, index):
         self.selected_gesture2 = self.mode_combobox2.currentText()
-        self.virtual_mouse.set_selected_gesture(self.selected_gesture2)
-        # self.virtual_mouse.Combobox2_gesture()
-        self.update_mode(index, self.mode_combobox2)
+        self.virtual_mouse.set_selected_gesture2(self.selected_gesture2)
+        self.virtual_mouse.Combobox2_gesture()
 
     def update_mode3(self, index):
-        self.selected_gesture3 = self.mode_combobox1.currentText()
-        self.virtual_mouse.set_selected_gesture(self.selected_gesture3)
-        # self.virtual_mouse.Combobox3_gesture()
-        self.update_mode(index, self.mode_combobox3)
+        self.selected_gesture3 = self.mode_combobox3.currentText()
+        self.virtual_mouse.set_selected_gesture3(self.selected_gesture3)
+        self.virtual_mouse.Combobox3_gesture()
 
-    def update_mode(self, index, combobox):
-        selected_gesture = combobox.currentText()
-
-        if selected_gesture != "Select Gesture Command":
-            # Handle logic based on the selected gesture
-            self.virtual_mouse.set_mode(selected_gesture)
+    # def update_mode1(self, index, combobox):
+    #     selected_gesture1 = combobox.currentText()
+    #
+    #     if selected_gesture1 != "Select Gesture Command":
+    #         # Handle logic based on the selected gesture
+    #         self.virtual_mouse.set_mode1(selected_gesture1)
+    #
+    # def update_mode2(self, index, combobox):
+    #     selected_gesture2 = combobox.currentText()
+    #
+    #     if selected_gesture2 != "Select Gesture Command":
+    #         # Handle logic based on the selected gesture
+    #         self.virtual_mouse.set_mode2(selected_gesture2)
+    #
+    # def update_mode3(self, index, combobox):
+    #     selected_gesture3 = combobox.currentText()
+    #
+    #     if selected_gesture3 != "Select Gesture Command":
+    #         # Handle logic based on the selected gesture
+    #         self.virtual_mouse.set_mode3(selected_gesture3)
