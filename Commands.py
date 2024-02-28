@@ -10,11 +10,11 @@ class GestureCommands:
         pyautogui.rightClick()
 
     @staticmethod
-    def scroll_up(lines=8):
+    def scroll_up(lines=20):
         pyautogui.scroll(lines)
 
     @staticmethod
-    def scroll_down(lines=8):
+    def scroll_down(lines=20):
         pyautogui.scroll(-lines)
 
     @staticmethod

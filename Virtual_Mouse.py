@@ -24,7 +24,9 @@ class VirtualMouse:
         self.prev_fingers_touching = False
 
         #self.mode = "Default"
-        self.selected_gesture = None
+        self.selected_gesture1 = None
+        self.selected_gesture2 = None
+        self.selected_gesture3 = None
         self.selected_mode = "Default"
 
     def set_homography_mapping(self, enabled):
@@ -41,19 +43,29 @@ class VirtualMouse:
         self.camera.set_camera()
         self.calibrated = False
 
-    def set_mode(self, mode):
+    def set_mode1(self, mode):
         self.mode = mode
         # Depending on the mode, you may want to update settings or perform specific actions
+    def set_mode2(self, mode):
+        self.mode = mode
 
-    def set_selected_gesture(self, selected_gesture):
-        self.selected_gesture = selected_gesture
+    def set_mode3(self, mode):
+        self.mode = mode
+
+    def set_selected_gesture1(self, selected_gesture):
+        self.selected_gesture1 = selected_gesture
+
+    def set_selected_gesture2(self, selected_gesture):
+        self.selected_gesture2 = selected_gesture
+    def set_selected_gesture3(self, selected_gesture):
+        self.selected_gesture3 = selected_gesture
     def Combobox1_gesture(self):
-        print("three fingers")
-        print("selected_gesture:", self.selected_gesture)
-        if self.selected_gesture is not None:
-            print("Executing gesture command:", self.selected_gesture)
-            if self.selected_gesture in gesture_mapping:
-                gesture_mapping[self.selected_gesture]()
+        print("first three fingers")
+        print("selected_gesture:", self.selected_gesture1)
+        if self.selected_gesture1 is not None:
+            print("Executing gesture command:", self.selected_gesture1)
+            if self.selected_gesture1 in gesture_mapping:
+                gesture_mapping[self.selected_gesture1]()
                 print("Gesture executed successfully.")
             else:
                 print("Gesture not found in mapping.")
@@ -61,12 +73,12 @@ class VirtualMouse:
             print("No selected gesture.")
 
     def Combobox2_gesture(self):
-        print("three fingers")
-        print("selected_gesture:", self.selected_gesture)
-        if self.selected_gesture is not None:
-            print("Executing gesture command:", self.selected_gesture)
-            if self.selected_gesture in gesture_mapping:
-                gesture_mapping[self.selected_gesture]()
+        print("last three fingers")
+        print("selected_gesture:", self.selected_gesture2)
+        if self.selected_gesture2 is not None:
+            print("Executing gesture command:", self.selected_gesture2)
+            if self.selected_gesture2 in gesture_mapping:
+                gesture_mapping[self.selected_gesture2]()
                 print("Gesture executed successfully.")
             else:
                 print("Gesture not found in mapping.")
@@ -74,12 +86,12 @@ class VirtualMouse:
             print("No selected gesture.")
 
     def Combobox3_gesture(self):
-        print("three fingers")
-        print("selected_gesture:", self.selected_gesture)
-        if self.selected_gesture is not None:
-            print("Executing gesture command:", self.selected_gesture)
-            if self.selected_gesture in gesture_mapping:
-                gesture_mapping[self.selected_gesture]()
+        print("five fingers")
+        print("selected_gesture:", self.selected_gesture3)
+        if self.selected_gesture3 is not None:
+            print("Executing gesture command:", self.selected_gesture3)
+            if self.selected_gesture3 in gesture_mapping:
+                gesture_mapping[self.selected_gesture3]()
                 print("Gesture executed successfully.")
             else:
                 print("Gesture not found in mapping.")
@@ -169,8 +181,16 @@ class VirtualMouse:
                         self.Combobox1_gesture()
                     except Exception as e:
                         print(f"An error occurred in hand tracking loop: {e}")
-                # elif fingers[0] == 1 and fingers[5] == 1 and fingers[1] == 0 and fingers[2] == 0:
-                #     self.Combobox2_gesture()
+                elif fingers[2] == 1 and fingers[3] == 1 and fingers[4] == 1:
+                    try:
+                        self.Combobox2_gesture()
+                    except Exception as e:
+                        print(f"An error occurred in hand tracking loop: {e}")
+                elif fingers[0] == 1 and fingers[4] == 1:
+                    try:
+                        self.Combobox3_gesture()
+                    except Exception as e:
+                        print(f"An error occurred in hand tracking loop: {e}")
                 else:
                     autopy.mouse.toggle(autopy.mouse.Button.LEFT, False)
 
