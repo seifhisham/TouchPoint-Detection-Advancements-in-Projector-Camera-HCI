@@ -53,16 +53,6 @@ class GestureCommands:
     def do_redo():
         pyautogui.hotkey("ctrl", "y")
 
-    @staticmethod
-    def do_custom_function(keys):
-        if keys == None or keys == "":
-            pass  # do nothing
-        else:
-            try:
-                key_seq = keys.replace(" ", "").lower().split("+")
-                pyautogui.hotkey(*key_seq)
-            except:
-                print("Custom function incapable")
 
 gesture_commands_instance = GestureCommands()
 
