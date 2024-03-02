@@ -3,7 +3,7 @@ from PyQt5.QtGui import QPixmap, QFont
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QLabel,
     QLineEdit, QPushButton, QMessageBox, QHBoxLayout
-)
+
 from Frontend.Control import HandTrackingApp
 
 class LoginApp(QWidget):
@@ -41,6 +41,7 @@ class LoginApp(QWidget):
         self.showMaximized()
         self.setWindowTitle("Login Page")
         self.setStyleSheet("background-color: #F5F5F5; color: #333;")
+
 
         # Create widgets
         self.wlabel = QLabel("Welcome back!")
@@ -93,6 +94,7 @@ class LoginApp(QWidget):
         # Connect button signals to slots
         self.login_button.clicked.connect(self.login)
 
+
         # Apply styles to buttons
         self.login_button.setFont(font)
 
@@ -106,3 +108,10 @@ class LoginApp(QWidget):
             self.hide()
             tracking_app = HandTrackingApp()
             tracking_app.show()
+
+
+if __name__ == "__main__":
+    app = QApplication([])
+    login_app = LoginApp()
+    login_app.show()
+    app.exec_()
