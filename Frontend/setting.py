@@ -203,7 +203,7 @@ class SettingsPage(QWidget):
         self.switch_customized_actions_button = QPushButton("Save")
         self.switch_customized_actions_button.setStyleSheet(style_sheet)
         empbox = QHBoxLayout()
-        pixmap = QPixmap("C:/Users/kirolos emad/Pictures/Screenshots/Screenshot 2024-02-27 172020.png")
+        pixmap = QPixmap("../Images/Controls.jpeg")
         self.image_label = QLabel()
         self.image_label.setPixmap(pixmap)
         empbox.addWidget(self.image_label, alignment=Qt.AlignCenter)
