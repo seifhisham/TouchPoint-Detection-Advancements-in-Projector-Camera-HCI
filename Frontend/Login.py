@@ -105,6 +105,7 @@ class LoginApp(QWidget):
         self.login_button.clicked.connect(self.login)
         self.upload_button.clicked.connect(self.upload_face_image)
 
+
         # Apply styles to buttons
         self.login_button.setFont(font)
         self.upload_button.setFont(font)
