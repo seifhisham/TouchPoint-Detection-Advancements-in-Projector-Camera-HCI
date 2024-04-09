@@ -7,6 +7,7 @@ from PyQt5.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QLabel,
     QLineEdit, QPushButton, QMessageBox, QFileDialog, QHBoxLayout
 )
+
 from Frontend.Control import HandTrackingApp
 from Database import DatabaseHandler
 import face_recognition
@@ -110,6 +111,7 @@ class LoginApp(QWidget):
         # Connect button signals to slots
         self.login_button.clicked.connect(self.login)
         self.upload_button.clicked.connect(self.upload_face_image)
+
 
         # Apply styles to buttons
         self.login_button.setFont(font)

@@ -13,6 +13,7 @@ from FaceDetection import FaceRecognitionApp
 from Frontend.setting import SettingsPage
 
 
+
 class TrackingThread(QThread):
     frame_processed = pyqtSignal(np.ndarray)
 
@@ -114,6 +115,7 @@ width: 200px;
         self.start_button = QPushButton("Start Hand Tracking", self)
         self.face_detection_button = QPushButton("Run Face Detection", self)
         self.stop_button = QPushButton("Stop", self)
+
         self.laptop_camera_radio = QRadioButton("Laptop Camera", self)
         self.mobile_camera_radio = QRadioButton("Mobile Camera", self)
         button_size = 100

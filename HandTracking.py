@@ -105,7 +105,7 @@ class handDetector():
 def main():
     pTime = 0
     cTime = 0
-    cap = cv2.VideoCapture(1)
+    cap = cv2.VideoCapture("http://192.168.1.19:4747/video")
     detector = handDetector()
     while True:
         success, img = cap.read()
