@@ -1,3 +1,6 @@
+import os
+
+import cv2
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap, QFont
 from PyQt5.QtWidgets import (
@@ -42,12 +45,15 @@ class LoginApp(QWidget):
         right_layout = QVBoxLayout()
         left_layout = QVBoxLayout()
 
+        current_dir = os.path.dirname(os.path.realpath(__file__))
+        image_path = os.path.join(current_dir, "../Images", "Login.jpeg")
+
         self.showMaximized()
         self.setWindowTitle("Login Page")
         self.setStyleSheet("background-color: #F5F5F5; color: #333;")
 
         # Database Connection
-        self.db_handler = DatabaseHandler(database_path='./gestify.db')
+        self.db_handler = DatabaseHandler(database_path='../TouchPoint-Detection-Advancements-in-Projector-Camera-HCI/gestify.db')
 
         # Create widgets
         self.wlabel = QLabel("Welcome back!")
@@ -87,7 +93,7 @@ class LoginApp(QWidget):
         right_layout.addWidget(self.upload_button, alignment=Qt.AlignLeft)
 
         # Add widgets to left layout
-        pixmap = QPixmap("C:/Users/aseif/PycharmProjects/TouchPoint-Detection-Advancements-in-Projector-Camera-HCI/Images/Login.jpeg")
+        pixmap = QPixmap(image_path)
         image_label = QLabel()
         image_label.setPixmap(pixmap)
         image_label.setPixmap(pixmap.scaled(1400, 900, Qt.KeepAspectRatio))
@@ -116,33 +122,59 @@ class LoginApp(QWidget):
         if not username or not password:
             QMessageBox.warning(self, "Login Failed", "Please enter both username and password.")
         else:
-            self.hide()
-            tracking_app = HandTrackingApp()
-            tracking_app.show()
+            # Check if the user exists in the database
+            user_data = self.db_handler.check_user(username, password)
+
+            if user_data:
+                # User found, navigate to the next page (in this case, HandTrackingApp)
+                self.hide()
+                tracking_app = HandTrackingApp()
+                tracking_app.show()
+            else:
+                # User not found, create a new account
+                QMessageBox.warning(self, "User Not Found", "User not found. Create a new account...")
+                # You can add logic here to handle account creation if needed
 
     def upload_face_image(self):
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
-        file_name, _ = QFileDialog.getOpenFileName(self, "Upload Face Image", "", "Image Files (*.png *.jpg *.bmp *.jpeg);;All Files (*)", options=options)
+        file_name, _ = QFileDialog.getOpenFileName(self, "Upload Face Image", "",
+                                                   "Image Files (*.png *.jpg *.bmp *.jpeg);;All Files (*)",
+                                                   options=options)
 
         if file_name:
             try:
-                # Handle the uploaded face image
-                image = face_recognition.load_image_file(file_name)
-                face_encoding = face_recognition.face_encodings(image)
+                # Load the face image using OpenCV
+                image = cv2.imread(file_name)
 
-                if face_encoding:
+                # Convert BGR image to RGB (required by face_recognition)
+                image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+                # Detect faces in the image
+                face_locations = face_recognition.face_locations(image_rgb)
+
+                if face_locations:
+                    # Get the first detected face (assuming one face per image)
+                    top, right, bottom, left = face_locations[0]
+
+                    # Crop the face region from the image
+                    face_img = image[top:bottom, left:right]
+
+                    # Resize the face image (optional, adjust as needed)
+                    face_img = cv2.resize(face_img, (256, 256))
+
                     # Get the username and password (you can modify this part as needed)
                     username = self.username_input.text()
                     password = self.password_input.text()
 
-                    # Insert the face encoding into the database and get the ID
-                    face_id = self.db_handler.insert_face_encoding(username, password, face_encoding[0].tobytes())
+                    # Insert the face image into the database (convert to bytes if needed)
+                    face_id = self.db_handler.insert_face_image(username, password, face_img)
 
                     if face_id is not None:
-                        QMessageBox.information(self, "Upload Successful", f"Face image '{file_name}' (ID: {face_id}) uploaded and encoded successfully.")
+                        QMessageBox.information(self, "Upload Successful",
+                                                f"Face image '{file_name}' (ID: {face_id}) uploaded successfully.")
                     else:
-                        QMessageBox.warning(self, "Upload Failed", "Error inserting face encoding into the database.")
+                        QMessageBox.warning(self, "Upload Failed", "Error inserting face image into the database.")
                 else:
                     QMessageBox.warning(self, "Upload Failed", "No face detected in the uploaded image.")
             except Exception as e:
