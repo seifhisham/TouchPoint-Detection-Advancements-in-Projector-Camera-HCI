@@ -1,6 +1,7 @@
+import os
 import cv2
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QPushButton, QLabel, QRadioButton, QHBoxLayout, QApplication, \
-    QToolButton
+    QToolButton, QDialog, QCheckBox
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtGui import QPixmap, QIcon, QImage
 import numpy as np
@@ -32,12 +33,16 @@ class FaceRecognitionThread(QThread):
         self.face_app = face_app
 
     def run(self):
-        self.face_app.run_face_recognition()
+        try:
+            self.face_app.run_face_recognition()
+        except Exception as e:
+            print(f"An error occurred during face detection: {e}")
 
 
 class HandTrackingApp(QWidget):
     def __init__(self):
         super().__init__()
+        self.virtual_mouse = VirtualMouse(self)
         style_sheet = """
         side_bar {
            background-color: transparent;
@@ -98,6 +103,9 @@ width: 200px;
         self.setWindowTitle("Home")
         self.setStyleSheet("background-color: #ffffff;")  # Changed background color
 
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        os.chdir(script_dir)
+
         # Create QVBoxLayouts for left and right alignments
         left_layout = QVBoxLayout()
         left_layout.setAlignment(Qt.AlignLeft)
@@ -141,9 +149,13 @@ width: 200px;
         self.button3.clicked.connect(self.setting)
         self.button4.clicked.connect(self.logout)
         self.start_button.clicked.connect(self.start_hand_tracking)
+        self.face_detection_button.clicked.connect(self.run_face_detection)
         self.laptop_camera_radio.clicked.connect(self.set_laptop_camera_mode)
         self.mobile_camera_radio.clicked.connect(self.set_mobile_camera_mode)
         self.stop_button.clicked.connect(self.stop_hand_tracking)
+        self.homography_checkbox = QCheckBox("Use Homography Mapping", self)
+        self.homography_checkbox.setChecked(False)  # Default is disabled
+        self.homography_checkbox.stateChanged.connect(self.toggle_homography_mapping)
 
         # Add buttons to the left layout
         left_layout.addWidget(self.button1)
@@ -157,6 +169,7 @@ width: 200px;
         right_layout.addWidget(self.stop_button)
         right_layout.addWidget(self.laptop_camera_radio)
         right_layout.addWidget(self.mobile_camera_radio)
+        right_layout.addWidget(self.homography_checkbox)
 
         # Add left and right layouts to a QHBoxLayout
         main_layout = QHBoxLayout(self)
@@ -164,7 +177,7 @@ width: 200px;
         main_layout.addLayout(right_layout)
 
         # Add a QLabel for displaying the image
-        pixmap = QPixmap("../Images/Login.jpeg")
+        pixmap = QPixmap("../Images/Controls.jpeg")
         self.image_label = QLabel()
         self.image_label.setPixmap(pixmap)
         main_layout.addWidget(self.image_label, alignment=Qt.AlignCenter)
@@ -172,23 +185,28 @@ width: 200px;
         # Set the layout for the widget
         self.setLayout(main_layout)
 
-        self.virtual_mouse = VirtualMouse(self)
+        self.settings_page = SettingsPage(virtual_mouse=self.virtual_mouse)
         self.is_tracking = False
+        self.is_detectingface = False
         self.tracking_thread = None
         self.face_thread = None  # Initialize face thread to None
         self.face_app = FaceRecognitionApp()
 
-        with open("./Frontend/Styles.qss", "r") as stylesheet_file:
-            self.setStyleSheet(stylesheet_file.read())
+        # with open("./Frontend/Styles.qss", "r") as stylesheet_file:
+        #     self.setStyleSheet(stylesheet_file.read())
 
     def logout(self):
-        self.hide()
+        self.close()
 
     def setting(self):
-        self.hide()
-        setting_app = SettingsPage()
-        setting_app.show()
-
+        try:
+            self.hide()
+            setting_app = SettingsPage(virtual_mouse=self.virtual_mouse, parent=self)
+            result = setting_app.exec_()
+            if result == QDialog.Accepted:  # Assuming you are using QDialog for SettingsPage
+                self.show()
+        except Exception as e:
+            print(f"An error occurred while opening the settings page: {e}")
     def set_laptop_camera_mode(self):
         self.virtual_mouse.set_camera_mode("laptop")
 
@@ -205,6 +223,16 @@ width: 200px;
             except Exception as e:
                 print(f"An error occurred during hand tracking: {e}")
 
+    def run_face_detection(self):
+        if not self.is_detectingface:
+            try:
+                self.is_detectingface = True
+                self.face_thread = FaceRecognitionThread(self.face_app)
+                self.face_thread.frame_processed.connect(self.update_frame)
+                self.face_thread.start()
+            except Exception as e:
+                print(f"An error occurred during face detection: {e}")
+
     def update_frame(self, frame):
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         h, w, ch = frame.shape
@@ -219,8 +247,12 @@ width: 200px;
             self.tracking_thread.quit()
             self.tracking_thread.wait()
         elif self.face_thread and self.face_thread.isRunning():
-            self.is_tracking = False
+            self.is_detectingface = False
             self.face_thread.quit()
             self.face_thread.wait()
         else:
             print("No active threads to stop.")
+
+    def toggle_homography_mapping(self):
+        enabled = self.homography_checkbox.isChecked()
+        self.virtual_mouse.set_homography_mapping(enabled)

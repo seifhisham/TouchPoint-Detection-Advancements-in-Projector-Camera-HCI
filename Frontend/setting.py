@@ -1,12 +1,15 @@
+import os
 import sys
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QGroupBox, QRadioButton, QComboBox, QHBoxLayout, QToolButton, QLabel
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QGroupBox, QRadioButton, QComboBox, \
+    QHBoxLayout, QToolButton, QLabel, QDialog
 from PyQt5.QtGui import QPixmap, QIcon
 from Commands import gesture_mapping
 
-class SettingsPage(QWidget):
-    def __init__(self):
-        super().__init__()
+
+class SettingsPage(QDialog):
+    def __init__(self, virtual_mouse, parent=None):
+        super().__init__(parent)
         self.setWindowTitle("Setting")
         self.setStyleSheet("background-color: #ffffff;")  # Changed background color
         style_sheet = """
@@ -113,6 +116,9 @@ class SettingsPage(QWidget):
             }
         """
 
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        os.chdir(script_dir)
+        self.virtual_mouse = virtual_mouse
         main_layout = QHBoxLayout()
 
         # Left layout
@@ -145,6 +151,8 @@ class SettingsPage(QWidget):
         self.button2.setStyleSheet(style_sheet)
         self.button3.setStyleSheet(style_sheet)
         self.button4.setStyleSheet(style_sheet)
+
+        self.button4.clicked.connect(self.logout)
 
         main_layout.addLayout(left_layout)
         right_layout = QVBoxLayout()
@@ -202,8 +210,9 @@ class SettingsPage(QWidget):
         # Add switch customized actions button to the left layout
         self.switch_customized_actions_button = QPushButton("Save")
         self.switch_customized_actions_button.setStyleSheet(style_sheet)
+        self.switch_customized_actions_button.clicked.connect(self.handleSaveButtonClick)
         empbox = QHBoxLayout()
-        pixmap = QPixmap("C:/Users/kirolos emad/Pictures/Screenshots/Screenshot 2024-02-27 172020.png")
+        pixmap = QPixmap("../Images/Controls.jpeg")
         self.image_label = QLabel()
         self.image_label.setPixmap(pixmap)
         empbox.addWidget(self.image_label, alignment=Qt.AlignCenter)
@@ -233,9 +242,12 @@ class SettingsPage(QWidget):
         self.mode_combobox3.addItems(gesture_commands)
 
     def update_mode1(self, index):
-        self.selected_gesture1 = self.mode_combobox1.currentText()
-        self.virtual_mouse.set_selected_gesture1(self.selected_gesture1)
-        self.virtual_mouse.Combobox1_gesture()
+        try:
+            self.selected_gesture1 = self.mode_combobox1.currentText()
+            self.virtual_mouse.set_selected_gesture1(self.selected_gesture1)
+            self.virtual_mouse.Combobox1_gesture()
+        except Exception as e:
+            print(f"An error occurred in update_mode1: {e}")
 
     def update_mode2(self, index):
         self.selected_gesture2 = self.mode_combobox2.currentText()
@@ -246,3 +258,12 @@ class SettingsPage(QWidget):
         self.selected_gesture3 = self.mode_combobox3.currentText()
         self.virtual_mouse.set_selected_gesture3(self.selected_gesture3)
         self.virtual_mouse.Combobox3_gesture()
+
+    def handleSaveButtonClick(self):
+        try:
+            self.accept()
+        except Exception as e:
+            print(f"Error occurred during Save button click: {e}")
+
+    def logout(self):
+        self.close()
