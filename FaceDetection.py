@@ -1,3 +1,4 @@
+import os
 import cv2
 import numpy as np
 import torch
@@ -5,25 +6,26 @@ import time
 import psutil
 from PyQt5.QtCore import pyqtSignal, QObject
 from camera_input import CameraInput
-from Database import DatabaseHandler
 import face_recognition
+
 
 class FaceRecognitionApp(QObject):
     frame_processed = pyqtSignal(np.ndarray)
     result_updated = pyqtSignal(bool)
 
-    def __init__(self, weights_path='../last.pt', database_path='../gestify.db'):
+    def __init__(self, weights_path='../last.pt', faces_folder='../uploaded_faces'):
         super().__init__()
         self.weights_path = weights_path
         self.yolo_model = None
         self.reference_encodings = []
         self.camera = CameraInput()
-        self.database_handler = DatabaseHandler(database_path=database_path)  # Initialize database handler
 
         # Constants
         self.COLOR_MATCH = (0, 255, 0)
         self.COLOR_NO_MATCH = (0, 0, 255)
         self.FONT = cv2.FONT_HERSHEY_SIMPLEX
+
+        self.faces_folder = faces_folder
 
     def load_yolo_model(self):
         try:
@@ -33,13 +35,19 @@ class FaceRecognitionApp(QObject):
         except Exception as e:
             print(f"Error loading YOLO model: {e}")
 
-    def load_reference_encodings(self):
-        reference_images = self.database_handler.load_face_images()
-        if reference_images:
-            self.reference_encodings = [np.array(ref[2]) for ref in reference_images]
-            print(f"Loaded {len(self.reference_encodings)} reference encodings")
-        else:
-            print("No reference encodings loaded from the database")
+    def load_reference_encodings_from_folder(self):
+        try:
+            self.reference_encodings = []
+            for filename in os.listdir(self.faces_folder):
+                if filename.endswith(".jpg") or filename.endswith(".png"):
+                    img_path = os.path.join(self.faces_folder, filename)
+                    face_img = face_recognition.load_image_file(img_path)
+                    face_encoding = face_recognition.face_encodings(face_img)
+                    if len(face_encoding) > 0:
+                        self.reference_encodings.append(face_encoding[0])
+            print(f"Loaded {len(self.reference_encodings)} reference encodings from folder: {self.faces_folder}")
+        except Exception as e:
+            print(f"Error loading reference encodings: {e}")
 
     def detect_faces(self, frame):
         results = self.yolo_model(frame)
@@ -55,21 +63,14 @@ class FaceRecognitionApp(QObject):
                 # Convert face_img to RGB (required by face_recognition)
                 face_img_rgb = cv2.cvtColor(face_img, cv2.COLOR_BGR2RGB)
 
-                # Find face locations and encodings in the image
-                face_locations = face_recognition.face_locations(face_img_rgb)
-                face_encodings = face_recognition.face_encodings(face_img_rgb, face_locations)
+                face_encodings = face_recognition.face_encodings(face_img_rgb)
 
-                for face_location, face_encoding in zip(face_locations, face_encodings):
-                    top, right, bottom, left = face_location
-
+                for face_encodings in face_encodings:
                     label = "No Match"  # Default label
-                    match = False
 
-                    if len(face_encoding) == 256:
-                        # Compare the detected face encoding with each reference encoding
-                        match = self.compare_faces(face_encoding)
-                        if match:
-                            label = "Match"
+                    match = self.compare_faces(face_encodings)
+                    if match:
+                        label = "Match"
 
                     print(f"Face at ({x1}, {y1}) - ({x2}, {y2}): {label}, {match}")
                     cv2.rectangle(frame, (x1, y1), (x2, y2), self.COLOR_MATCH if match else self.COLOR_NO_MATCH, 2)
@@ -91,7 +92,7 @@ class FaceRecognitionApp(QObject):
     def run_face_recognition(self):
         try:
             self.load_yolo_model()
-            self.load_reference_encodings()
+            self.load_reference_encodings_from_folder()
 
             self.camera.set_camera_mode("laptop")
             self.camera.set_camera()

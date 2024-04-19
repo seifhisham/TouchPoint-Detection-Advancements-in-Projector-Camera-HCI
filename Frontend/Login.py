@@ -165,18 +165,20 @@ class LoginApp(QWidget):
                     # Resize the face image (optional, adjust as needed)
                     face_img = cv2.resize(face_img, (256, 256))
 
-                    # Get the username and password (you can modify this part as needed)
+                    # Get the path to save the face image
+                    save_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../uploaded_faces")
+                    os.makedirs(save_dir, exist_ok=True)  # Create the directory if it doesn't exist
+
+                    # Generate a unique filename for the saved face image
                     username = self.username_input.text()
-                    password = self.password_input.text()
+                    file_basename = f"{username}.jpg"
+                    save_path = os.path.join(save_dir, file_basename)
 
-                    # Insert the face image into the database (convert to bytes if needed)
-                    face_id = self.db_handler.insert_face_image(username, password, face_img)
+                    # Save the processed face image to disk
+                    cv2.imwrite(save_path, face_img)
 
-                    if face_id is not None:
-                        QMessageBox.information(self, "Upload Successful",
-                                                f"Face image '{file_name}' (ID: {face_id}) uploaded successfully.")
-                    else:
-                        QMessageBox.warning(self, "Upload Failed", "Error inserting face image into the database.")
+                    QMessageBox.information(self, "Upload Successful",
+                                            f"Face image '{file_name}' saved successfully: {save_path}")
                 else:
                     QMessageBox.warning(self, "Upload Failed", "No face detected in the uploaded image.")
             except Exception as e:
