@@ -125,17 +125,19 @@ class LoginApp(QWidget):
             QMessageBox.warning(self, "Login Failed", "Please enter both username and password.")
         else:
             # Check if the user exists in the database
-            user_data = self.db_handler.check_user(username, password)
+            user_data = self.db_handler.get_user(username)
 
-            if user_data:
-                # User found, navigate to the next page (in this case, HandTrackingApp)
+            if user_data and user_data[2] == password:
+                # User found and password matches, navigate to the next page (HandTrackingApp)
                 self.hide()
-                tracking_app = HandTrackingApp()
+                tracking_app = HandTrackingApp(username)
                 tracking_app.show()
+            elif user_data:
+                # User exists but password doesn't match (optional: handle incorrect password)
+                QMessageBox.warning(self, "Login Failed", "Incorrect password. Please try again.")
             else:
-                # User not found, create a new account
-                QMessageBox.warning(self, "User Not Found", "User not found. Create a new account...")
-                # You can add logic here to handle account creation if needed
+                # User not found, create a new account (optional: implement account creation)
+                QMessageBox.warning(self, "User Not Found", "User not found. Please register a new account.")
 
     def upload_face_image(self):
         options = QFileDialog.Options()

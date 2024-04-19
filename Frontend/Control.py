@@ -40,7 +40,7 @@ class FaceRecognitionThread(QThread):
 
 
 class HandTrackingApp(QWidget):
-    def __init__(self):
+    def __init__(self, current_user):
         super().__init__()
         self.virtual_mouse = VirtualMouse(self)
         style_sheet = """
@@ -103,6 +103,9 @@ width: 200px;
         self.setWindowTitle("Home")
         self.setStyleSheet("background-color: #ffffff;")  # Changed background color
 
+        # Current user logged in
+        self.current_user = current_user
+
         script_dir = os.path.dirname(os.path.abspath(__file__))
         os.chdir(script_dir)
 
@@ -125,7 +128,7 @@ width: 200px;
         self.button3 = QToolButton(self)
         self.button4 = QToolButton(self)
 
-        self.button1.setIcon(QIcon("../Images/Profile.jpeg"))
+        self.button1.setIcon(QIcon("../Images/Home.png"))
         self.button2.setIcon(QIcon("../Images/Help.jpeg"))
         self.button3.setIcon(QIcon("../Images/Setting.jpeg"))
         self.button4.setIcon(QIcon("../Images/Exit.jpeg"))
@@ -185,7 +188,7 @@ width: 200px;
         # Set the layout for the widget
         self.setLayout(main_layout)
 
-        self.settings_page = SettingsPage(virtual_mouse=self.virtual_mouse)
+        self.settings_page = SettingsPage(self.virtual_mouse,self.current_user)
         self.is_tracking = False
         self.is_detectingface = False
         self.tracking_thread = None
@@ -201,7 +204,7 @@ width: 200px;
     def setting(self):
         try:
             self.hide()
-            setting_app = SettingsPage(virtual_mouse=self.virtual_mouse, parent=self)
+            setting_app = SettingsPage(self.virtual_mouse, self.current_user, parent=self)
             result = setting_app.exec_()
             if result == QDialog.Accepted:  # Assuming you are using QDialog for SettingsPage
                 self.show()

@@ -2,13 +2,13 @@ import os
 import sys
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QGroupBox, QRadioButton, QComboBox, \
-    QHBoxLayout, QToolButton, QLabel, QDialog
+    QHBoxLayout, QToolButton, QLabel, QDialog, QMessageBox
 from PyQt5.QtGui import QPixmap, QIcon
 from Commands import gesture_mapping
-
+from Database import DatabaseHandler
 
 class SettingsPage(QDialog):
-    def __init__(self, virtual_mouse, parent=None):
+    def __init__(self, virtual_mouse, current_user, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Setting")
         self.setStyleSheet("background-color: #ffffff;")  # Changed background color
@@ -116,6 +116,14 @@ class SettingsPage(QDialog):
             }
         """
 
+        # Get the Current user logged in
+        self.current_user = current_user
+
+        # Get the database connection
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        db_filename = "gestify.db"
+        self.db_path = os.path.join(current_dir, '..', db_filename)
+
         script_dir = os.path.dirname(os.path.abspath(__file__))
         os.chdir(script_dir)
         self.virtual_mouse = virtual_mouse
@@ -134,7 +142,7 @@ class SettingsPage(QDialog):
         self.selected_gesture2 = None
         self.selected_gesture3 = None
 
-        self.button1.setIcon(QIcon("../Images/Profile.jpeg"))
+        self.button1.setIcon(QIcon("../Images/Home.png"))
         self.button2.setIcon(QIcon("../Images/Help.jpeg"))
         self.button3.setIcon(QIcon("../Images/Setting.jpeg"))
         self.button4.setIcon(QIcon("../Images/Exit.jpeg"))
@@ -152,6 +160,7 @@ class SettingsPage(QDialog):
         self.button3.setStyleSheet(style_sheet)
         self.button4.setStyleSheet(style_sheet)
 
+        self.button1.clicked.connect(self.handleControlPage)
         self.button4.clicked.connect(self.logout)
 
         main_layout.addLayout(left_layout)
@@ -261,9 +270,26 @@ class SettingsPage(QDialog):
 
     def handleSaveButtonClick(self):
         try:
+            # Get selected gesture commands from combo boxes
+            gesture1 = self.mode_combobox1.currentText()
+            gesture2 = self.mode_combobox2.currentText()
+            gesture3 = self.mode_combobox3.currentText()
+
+            # Create an instance of DatabaseHandler
+            db_handler = DatabaseHandler(database_path=self.db_path)
+
+            # Update the gestures for the current user in the database
+            db_handler.update_gestures(self.current_user, gesture1, gesture2, gesture3)
+
+            if not os.path.exists(self.db_path):
+                print(f"Database file not found: {self.db_path}")
+        except Exception as e:
+            QMessageBox.warning(self, "Upload Failed", f"Error Saving The Gestures: {e}")
+
+    def handleControlPage(self):
+        try:
             self.accept()
         except Exception as e:
             print(f"Error occurred during Save button click: {e}")
-
     def logout(self):
         self.close()

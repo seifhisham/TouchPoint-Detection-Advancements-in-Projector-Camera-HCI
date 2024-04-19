@@ -6,95 +6,86 @@ class DatabaseHandler:
     def __init__(self, database_path='../TouchPoint-Detection-Advancements-in-Projector-Camera-HCI/gestify.db'):
         self.database_path = database_path
 
-    def create_database(self):
+    def create_users_table(self):
         try:
-            self.connection = sqlite3.connect(self.database_path)
-            cursor = self.connection.cursor()
+            connection = sqlite3.connect(self.database_path)
+            cursor = connection.cursor()
 
-            # Create a table for face encodings with an 'id', 'username', 'password', and 'encoding' column
+            # Create a table for users with columns for username, password, and gesture commands
             cursor.execute('''
-                CREATE TABLE IF NOT EXISTS faces (
+                CREATE TABLE IF NOT EXISTS users (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    username TEXT NOT NULL,
+                    username TEXT UNIQUE NOT NULL,
                     password TEXT NOT NULL,
-                    face_img BLOB NOT NULL
+                    gesture1 TEXT DEFAULT NULL,
+                    gesture2 TEXT DEFAULT NULL,
+                    gesture3 TEXT DEFAULT NULL
                 )
             ''')
 
-            self.connection.commit()
+            connection.commit()
+            connection.close()
         except Exception as e:
-            print(f"Error creating database: {e}")
+            print(f"Error creating users table: {e}")
 
-    def insert_face_image(self, username, password, face_img):
+    def add_user(self, username, password):
         try:
+            # Check if users table exists, create if not
+            self.create_users_table()
+
             connection = sqlite3.connect(self.database_path)
             cursor = connection.cursor()
 
-            # Convert face image to bytes for storage in database
-            _, encoding_bytes = cv2.imencode('.png', face_img)  # Use .png for generic image encoding
-
-            # Insert face image into the database
+            # Insert a new user into the database
             cursor.execute('''
-                INSERT INTO faces (username, password, face_img) VALUES (?, ?, ?)
-            ''', (username, password, encoding_bytes))
+                INSERT INTO users (username, password)
+                VALUES (?, ?)
+            ''', (username, password))
 
             connection.commit()
-
-            # Return the ID of the inserted row
-            face_id = cursor.lastrowid
-
-            cursor.close()
             connection.close()
-
-            return face_id
+            return True  # Return True indicating user added successfully
+        except sqlite3.IntegrityError:
+            print(f"User '{username}' already exists.")
+            return False  # Return False if user already exists
         except Exception as e:
-            print(f"Error inserting face image: {e}")
-            return None
+            print(f"Error adding user: {e}")
+            return False  # Return False for any other errors
 
-    def load_face_images(self):
+    def update_gestures(self, username, gesture1=None, gesture2=None, gesture3=None):
         try:
             connection = sqlite3.connect(self.database_path)
             cursor = connection.cursor()
 
-            # Execute query to retrieve face images
-            cursor.execute('SELECT id, username, face_img FROM faces')
-            rows = cursor.fetchall()
+            # Update the gesture commands for the specified user
+            cursor.execute('''
+                UPDATE users
+                SET gesture1 = ?,
+                    gesture2 = ?,
+                    gesture3 = ?
+                WHERE username = ?
+            ''', (gesture1, gesture2, gesture3, username))
 
-            # Process and return the retrieved data
-            face_images = []
-            for row in rows:
-                face_id = row[0]
-                username = row[1]
-                encoding_bytes = row[2]
-
-                # Convert encoding bytes back to numpy array (image)
-                nparr = np.frombuffer(encoding_bytes, np.uint8)
-                img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-
-                # Append to the list of face images
-                face_images.append((face_id, username, img))
-
-            cursor.close()
+            connection.commit()
             connection.close()
-
-            return face_images
+            print(f"Gesture commands updated for user '{username}'.")
         except Exception as e:
-            print(f"Error loading face images from database: {e}")
-            return []
+            print(f"Error updating gestures: {e}")
 
-    def check_user(self, username, password):
+    def get_user(self, username):
         try:
             connection = sqlite3.connect(self.database_path)
             cursor = connection.cursor()
 
-            # Query to check if user exists with given username and password
-            cursor.execute('SELECT * FROM faces WHERE username=? AND password=?', (username, password))
+            # Retrieve user data by username
+            cursor.execute('''
+                SELECT * FROM users
+                WHERE username = ?
+            ''', (username,))
+
             user_data = cursor.fetchone()
-
-            cursor.close()
             connection.close()
-
             return user_data  # Returns user data if found (or None if not found)
         except Exception as e:
-            print(f"Error checking user: {e}")
+            print(f"Error getting user data: {e}")
             return None
