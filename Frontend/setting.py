@@ -1,11 +1,12 @@
 import os
 import sys
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, pyqtSlot
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QGroupBox, QRadioButton, QComboBox, \
     QHBoxLayout, QToolButton, QLabel, QDialog, QMessageBox
 from PyQt5.QtGui import QPixmap, QIcon
 from Commands import gesture_mapping
 from Database import DatabaseHandler
+from FaceDetection import FaceRecognitionApp
 
 class SettingsPage(QDialog):
     def __init__(self, virtual_mouse, current_user, parent=None):
@@ -115,18 +116,22 @@ class SettingsPage(QDialog):
                 height: 20px; 
             }
         """
-
+        self.virtual_mouse = virtual_mouse
         # Get the Current user logged in
         self.current_user = current_user
+
+        # Initialize for account switching function
+        self.face_app = FaceRecognitionApp()
+        self.face_app.user_detected.connect(self.update_combo_boxes_with_user)
 
         # Get the database connection
         current_dir = os.path.dirname(os.path.abspath(__file__))
         db_filename = "gestify.db"
         self.db_path = os.path.join(current_dir, '..', db_filename)
+        self.database = DatabaseHandler(database_path=self.db_path)
 
         script_dir = os.path.dirname(os.path.abspath(__file__))
         os.chdir(script_dir)
-        self.virtual_mouse = virtual_mouse
         main_layout = QHBoxLayout()
 
         # Left layout
@@ -252,9 +257,12 @@ class SettingsPage(QDialog):
 
     def update_mode1(self, index):
         try:
-            self.selected_gesture1 = self.mode_combobox1.currentText()
-            self.virtual_mouse.set_selected_gesture1(self.selected_gesture1)
-            self.virtual_mouse.Combobox1_gesture()
+            if self.virtual_mouse is not None:
+                self.selected_gesture1 = self.mode_combobox1.currentText()
+                self.virtual_mouse.set_selected_gesture1(self.selected_gesture1)
+                self.virtual_mouse.Combobox1_gesture()
+            else:
+                print("Error: virtual_mouse is not initialized.")
         except Exception as e:
             print(f"An error occurred in update_mode1: {e}")
 
@@ -267,6 +275,22 @@ class SettingsPage(QDialog):
         self.selected_gesture3 = self.mode_combobox3.currentText()
         self.virtual_mouse.set_selected_gesture3(self.selected_gesture3)
         self.virtual_mouse.Combobox3_gesture()
+
+    @pyqtSlot(str)
+    def update_combo_boxes_with_user(self, username):
+        try:
+            print(f"Updating combo boxes for user: {username}")
+            # Fetch user gestures from database based on identified username
+            user_data = self.database.fetch_user_gestures(username)
+            print(f"User data fetched: {user_data}")
+            if user_data:
+                gesture1, gesture2, gesture3 = user_data
+                print(f"Setting combo boxes - Gesture1: {gesture1}, Gesture2: {gesture2}, Gesture3: {gesture3}")
+                self.mode_combobox1.setCurrentText(gesture1)
+                self.mode_combobox2.setCurrentText(gesture2)
+                self.mode_combobox3.setCurrentText(gesture3)
+        except Exception as e:
+            print(f"Error updating combo boxes with user settings: {e}")
 
     def handleSaveButtonClick(self):
         try:

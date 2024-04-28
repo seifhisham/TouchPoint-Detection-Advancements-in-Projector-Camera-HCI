@@ -9,7 +9,6 @@ import numpy as np
 # Import required classes from your modules
 from Virtual_Mouse import VirtualMouse
 from FaceDetection import FaceRecognitionApp
-# from setting import SettingsPage
 from Frontend.setting import SettingsPage
 
 
@@ -27,12 +26,16 @@ class TrackingThread(QThread):
 class FaceRecognitionThread(QThread):
     frame_processed = pyqtSignal(np.ndarray)
 
-    def __init__(self, face_app):
+    def __init__(self, face_app, virtual_mouse):
         super().__init__()
         self.face_app = face_app
+        self.virtual_mouse = virtual_mouse
 
     def run(self):
         try:
+            self.face_app = FaceRecognitionApp()
+            settings_page = SettingsPage(virtual_mouse=self.virtual_mouse, current_user=None)
+            self.face_app.user_detected.connect(settings_page.update_combo_boxes_with_user)
             self.face_app.run_face_recognition()
         except Exception as e:
             print(f"An error occurred during face detection: {e}")
@@ -192,6 +195,7 @@ width: 200px;
         self.tracking_thread = None
         self.face_thread = None  # Initialize face thread to None
         self.face_app = FaceRecognitionApp()
+        self.face_app.user_detected.connect(self.settings_page.update_combo_boxes_with_user)
 
         # with open("./Frontend/Styles.qss", "r") as stylesheet_file:
         #     self.setStyleSheet(stylesheet_file.read())
@@ -204,7 +208,7 @@ width: 200px;
             self.hide()
             setting_app = SettingsPage(self.virtual_mouse, self.current_user, parent=self)
             result = setting_app.exec_()
-            if result == QDialog.Accepted:  # Assuming you are using QDialog for SettingsPage
+            if result == QDialog.Accepted:
                 self.show()
         except Exception as e:
             print(f"An error occurred while opening the settings page: {e}")
@@ -228,7 +232,7 @@ width: 200px;
         if not self.is_detectingface:
             try:
                 self.is_detectingface = True
-                self.face_thread = FaceRecognitionThread(self.face_app)
+                self.face_thread = FaceRecognitionThread(self.face_app, self.virtual_mouse)
                 self.face_thread.frame_processed.connect(self.update_frame)
                 self.face_thread.start()
             except Exception as e:
