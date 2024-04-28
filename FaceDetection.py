@@ -5,13 +5,16 @@ import torch
 import time
 import psutil
 from PyQt5.QtCore import pyqtSignal, QObject
+
 from camera_input import CameraInput
 import face_recognition
+from Database import DatabaseHandler
 
 
 class FaceRecognitionApp(QObject):
     frame_processed = pyqtSignal(np.ndarray)
     result_updated = pyqtSignal(bool)
+    user_detected = pyqtSignal(str)
 
     def __init__(self, weights_path='../last.pt', faces_folder='../uploaded_faces'):
         super().__init__()
@@ -19,6 +22,10 @@ class FaceRecognitionApp(QObject):
         self.yolo_model = None
         self.reference_encodings = []
         self.camera = CameraInput()
+
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        database_file = os.path.join(script_dir, "gestify.db")
+        self.database = DatabaseHandler(database_path=database_file)
 
         # Constants
         self.COLOR_MATCH = (0, 255, 0)
@@ -44,7 +51,8 @@ class FaceRecognitionApp(QObject):
                     face_img = face_recognition.load_image_file(img_path)
                     face_encoding = face_recognition.face_encodings(face_img)
                     if len(face_encoding) > 0:
-                        self.reference_encodings.append(face_encoding[0])
+                        username = os.path.splitext(filename)[0]  # Extract username from filename
+                        self.reference_encodings.append((face_encoding[0], username))
             print(f"Loaded {len(self.reference_encodings)} reference encodings from folder: {self.faces_folder}")
         except Exception as e:
             print(f"Error loading reference encodings: {e}")
@@ -68,11 +76,15 @@ class FaceRecognitionApp(QObject):
                 for face_encodings in face_encodings:
                     label = "No Match"  # Default label
 
-                    match = self.compare_faces(face_encodings)
+                    match, username = self.compare_faces(face_encodings)
                     if match:
                         label = "Match"
 
-                    print(f"Face at ({x1}, {y1}) - ({x2}, {y2}): {label}, {match}")
+                        user_data = self.database.fetch_user_gestures(username)
+                        if user_data:
+                            self.user_detected.emit(username) # Send the signal to the Setting page
+
+                    print(f"Face at ({x1}, {y1}) - ({x2}, {y2}): {label}, {match}, {username}")
                     cv2.rectangle(frame, (x1, y1), (x2, y2), self.COLOR_MATCH if match else self.COLOR_NO_MATCH, 2)
                     cv2.putText(frame, label, (x1, y1 - 10), self.FONT, 0.5, (255, 255, 255), 2)
 
@@ -82,12 +94,13 @@ class FaceRecognitionApp(QObject):
         try:
             if self.reference_encodings:
                 # Compare the detected face encoding with each reference encoding
-                matches = face_recognition.compare_faces(self.reference_encodings, detected_face_encoding)
-                if True in matches:
-                    return True
+                for ref_encoding, username in self.reference_encodings:
+                    match = face_recognition.compare_faces([ref_encoding], detected_face_encoding)[0]
+                    if match:
+                        return True, username
         except Exception as e:
             print(f"Error comparing faces: {e}")
-        return False
+        return False, None
 
     def run_face_recognition(self):
         try:

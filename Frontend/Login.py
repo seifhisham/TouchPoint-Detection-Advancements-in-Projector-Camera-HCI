@@ -129,14 +129,14 @@ class LoginApp(QWidget):
 
             if user_data and user_data[2] == password:
                 # User found and password matches, navigate to the next page (HandTrackingApp)
-                self.hide()
+                #self.hide()
                 tracking_app = HandTrackingApp(username)
                 tracking_app.show()
             elif user_data:
-                # User exists but password doesn't match (optional: handle incorrect password)
+                # User exists but password doesn't match
                 QMessageBox.warning(self, "Login Failed", "Incorrect password. Please try again.")
             else:
-                # User not found, create a new account (optional: implement account creation)
+                # User not found, create a new account
                 QMessageBox.warning(self, "User Not Found", "User not found. Please register a new account.")
 
     def upload_face_image(self):
