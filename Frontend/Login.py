@@ -5,11 +5,13 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap, QFont
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QLabel,
-    QLineEdit, QPushButton, QMessageBox, QFileDialog, QHBoxLayout
+    QLineEdit, QPushButton, QMessageBox, QFileDialog, QHBoxLayout, QDialog
 )
 from Frontend.Control import HandTrackingApp
 from Database import DatabaseHandler
-import face_recognition
+
+from Frontend.SignUp import SignupApp
+
 
 class LoginApp(QWidget):
     def __init__(self):
@@ -69,12 +71,12 @@ class LoginApp(QWidget):
         self.password_input.setFixedWidth(300)
         self.login_button = QPushButton("Login")
         self.login_button.setFixedWidth(300)
-        self.upload_button = QPushButton("Upload Face Image")
-        self.upload_button.setFixedWidth(300)
+        self.signup_button = QPushButton("Sign Up")
+        self.signup_button.setFixedWidth(300)
+        self.signup_button.setStyleSheet(button_style_sheet)
 
         # Styling
         self.login_button.setStyleSheet(button_style_sheet)
-        self.upload_button.setStyleSheet(button_style_sheet)
         self.wlabel.setFont(font2)
         self.dlable.setFont(font)
         self.username_input.setPlaceholderText(self.username_label.text())
@@ -90,13 +92,13 @@ class LoginApp(QWidget):
         right_layout.addWidget(self.password_label, alignment=Qt.AlignLeft)
         right_layout.addWidget(self.password_input, alignment=Qt.AlignLeft)
         right_layout.addWidget(self.login_button, alignment=Qt.AlignLeft)
-        right_layout.addWidget(self.upload_button, alignment=Qt.AlignLeft)
+        right_layout.addWidget(self.signup_button, alignment=Qt.AlignLeft)
 
         # Add widgets to left layout
         pixmap = QPixmap(image_path)
         image_label = QLabel()
         image_label.setPixmap(pixmap)
-        image_label.setPixmap(pixmap.scaled(1400, 900, Qt.KeepAspectRatio))
+        image_label.setPixmap(pixmap.scaled(1000, 900, Qt.KeepAspectRatio))
         left_layout.addWidget(image_label, alignment=Qt.AlignLeft)
 
         # Add left and right layouts to main layout
@@ -109,11 +111,22 @@ class LoginApp(QWidget):
 
         # Connect button signals to slots
         self.login_button.clicked.connect(self.login)
-        self.upload_button.clicked.connect(self.upload_face_image)
+        self.login_button.clicked.connect(self.login)
+        self.signup_button.clicked.connect(self.open_signup_page)
 
         # Apply styles to buttons
         self.login_button.setFont(font)
-        self.upload_button.setFont(font)
+
+    def open_signup_page(self):
+        try:
+            self.hide()
+            self.signup_window = SignupApp(parent=self)
+            result = self.signup_window.exec_()
+            if result == QDialog.Accepted:
+                self.show()
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Error opening signup page: {e}")
+            print(f"An error occurred while opening the signup page: {e}")
 
     def login(self):
         username = self.username_input.text()
@@ -127,59 +140,12 @@ class LoginApp(QWidget):
 
             if user_data and user_data[2] == password:
                 # User found and password matches, navigate to the next page (HandTrackingApp)
-                #self.hide()
                 tracking_app = HandTrackingApp(username)
                 tracking_app.show()
+                self.hide()
             elif user_data:
                 # User exists but password doesn't match
                 QMessageBox.warning(self, "Login Failed", "Incorrect password. Please try again.")
             else:
                 # User not found, create a new account
                 QMessageBox.warning(self, "User Not Found", "User not found. Please register a new account.")
-
-    def upload_face_image(self):
-        options = QFileDialog.Options()
-        options |= QFileDialog.DontUseNativeDialog
-        file_name, _ = QFileDialog.getOpenFileName(self, "Upload Face Image", "",
-                                                   "Image Files (*.png *.jpg *.bmp *.jpeg);;All Files (*)",
-                                                   options=options)
-
-        if file_name:
-            try:
-                # Load the face image using OpenCV
-                image = cv2.imread(file_name)
-
-                # Convert BGR image to RGB (required by face_recognition)
-                image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-
-                # Detect faces in the image
-                face_locations = face_recognition.face_locations(image_rgb)
-
-                if face_locations:
-                    # Get the first detected face (assuming one face per image)
-                    top, right, bottom, left = face_locations[0]
-
-                    # Crop the face region from the image
-                    face_img = image[top:bottom, left:right]
-
-                    # Resize the face image (optional, adjust as needed)
-                    face_img = cv2.resize(face_img, (256, 256))
-
-                    # Get the path to save the face image
-                    save_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../uploaded_faces")
-                    os.makedirs(save_dir, exist_ok=True)  # Create the directory if it doesn't exist
-
-                    # Generate a unique filename for the saved face image
-                    username = self.username_input.text()
-                    file_basename = f"{username}.jpg"
-                    save_path = os.path.join(save_dir, file_basename)
-
-                    # Save the processed face image to disk
-                    cv2.imwrite(save_path, face_img)
-
-                    QMessageBox.information(self, "Upload Successful",
-                                            f"Face image '{file_name}' saved successfully: {save_path}")
-                else:
-                    QMessageBox.warning(self, "Upload Failed", "No face detected in the uploaded image.")
-            except Exception as e:
-                QMessageBox.warning(self, "Upload Failed", f"Error processing the uploaded image: {e}")
