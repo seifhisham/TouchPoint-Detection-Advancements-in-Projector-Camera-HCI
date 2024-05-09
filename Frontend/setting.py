@@ -178,7 +178,7 @@ class SettingsPage(QDialog):
         self.face_detection.setStyleSheet(style_sheet)
         enable_features_layout.addWidget(self.face_detection)
         self.enable_features_group.setLayout(enable_features_layout)
-        right_layout.addWidget(self.enable_features_group)
+        #right_layout.addWidget(self.enable_features_group)
 
         # Add select action group box
         self.select_action_group = QGroupBox("Customize gesture")

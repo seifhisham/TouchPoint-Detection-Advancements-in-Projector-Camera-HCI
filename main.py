@@ -6,7 +6,7 @@ from Frontend.Login import LoginApp
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    icon_path = "C:/Users/aseif/PycharmProjects/TouchPoint-Detection-Advancements-in-Projector-Camera-HCI/Images/Home.png" # Change this to the path of your icon file
+    icon_path = "../TouchPoint-Detection-Advancements-in-Projector-Camera-HCI/Images/Gestify.png"
     app_icon = QIcon(icon_path)
 
     # Set the application icon
