@@ -6,7 +6,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont, QPixmap
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QLabel,
-    QLineEdit, QPushButton, QMessageBox, QHBoxLayout, QDialog, QFileDialog
+    QLineEdit, QPushButton, QMessageBox, QHBoxLayout, QDialog, QFileDialog, QFormLayout
 )
 
 from Database import DatabaseHandler
@@ -47,13 +47,16 @@ class SignupApp(QDialog):
         font.setPointSize(18)
         font2 = QFont()
         font2.setPointSize(25)
+        font3 = QFont()
+        font3.setPointSize(10)
+        font3.setBold(True)
 
         main_layout = QHBoxLayout()
         right_layout = QVBoxLayout()
         left_layout = QVBoxLayout()
 
         self.showMaximized()
-        self.setWindowTitle("Sign up Page")
+        self.setWindowTitle("Sign up")
         self.setModal(True)  # Make the dialog modal (blocks input to parent)
         self.setStyleSheet("background-color: #F5F5F5; color: #333;")
 
@@ -74,12 +77,17 @@ class SignupApp(QDialog):
         self.cpassword_input = QLineEdit()
         self.cpassword_input.setEchoMode(QLineEdit.Password)
         self.cpassword_input.setFixedWidth(300)
-        self.create_button = QPushButton("Create Account")
+        self.create_button = QPushButton("Sign Up")
         self.create_button.setFixedWidth(300)
         self.upload_button = QPushButton("Upload Face Image")
         self.upload_button.setFixedWidth(300)
-        self.cancel_button = QPushButton("Cancel")
+        self.cancel_button = QPushButton("Login")
         self.cancel_button.setFixedWidth(300)
+
+        form_layout = QFormLayout()
+        form_layout.addRow(self.username_label, self.username_input)
+        form_layout.addRow(self.password_label, self.password_input)
+        form_layout.addRow(self.cpassword_label, self.cpassword_input)
 
         # Styling
         self.create_button.setStyleSheet(button_style_sheet)
@@ -87,6 +95,9 @@ class SignupApp(QDialog):
         self.cancel_button.setStyleSheet(button_style_sheet)
         self.wlabel.setFont(font2)
         self.dlable.setFont(font)
+        self.username_label.setFont(font3)
+        self.password_label.setFont(font3)
+        self.cpassword_label.setFont(font3)
         self.username_input.setPlaceholderText(self.username_label.text())
         self.password_input.setPlaceholderText(self.password_label.text())
         self.cpassword_input.setPlaceholderText(self.cpassword_label.text())
@@ -95,17 +106,12 @@ class SignupApp(QDialog):
         self.cpassword_input.setStyleSheet(button_style_sheet)
 
         current_dir = os.path.dirname(os.path.realpath(__file__))
-        image_path = os.path.join(current_dir, "../Images", "Login.jpeg")
+        image_path = os.path.join(current_dir, "../Images", "Gestify.png")
 
         # Add widgets to right layout
         right_layout.addWidget(self.wlabel, alignment=Qt.AlignLeft)
         right_layout.addWidget(self.dlable, alignment=Qt.AlignLeft)
-        right_layout.addWidget(self.username_label, alignment=Qt.AlignLeft)
-        right_layout.addWidget(self.username_input, alignment=Qt.AlignLeft)
-        right_layout.addWidget(self.password_label, alignment=Qt.AlignLeft)
-        right_layout.addWidget(self.password_input, alignment=Qt.AlignLeft)
-        right_layout.addWidget(self.cpassword_label, alignment=Qt.AlignLeft)
-        right_layout.addWidget(self.cpassword_input, alignment=Qt.AlignLeft)
+        right_layout.addLayout(form_layout)
         right_layout.addWidget(self.upload_button, alignment=Qt.AlignLeft)
         right_layout.addWidget(self.create_button, alignment=Qt.AlignLeft)
         right_layout.addWidget(self.cancel_button, alignment=Qt.AlignLeft)
@@ -114,7 +120,7 @@ class SignupApp(QDialog):
         pixmap = QPixmap(image_path)
         image_label = QLabel()
         image_label.setPixmap(pixmap)
-        image_label.setPixmap(pixmap.scaled(1000, 900, Qt.KeepAspectRatio))
+        image_label.setPixmap(pixmap.scaled(800, 600, Qt.KeepAspectRatio))
         left_layout.addWidget(image_label, alignment=Qt.AlignLeft)
 
         # Add left and right layouts to main layout
