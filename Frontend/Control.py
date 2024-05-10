@@ -6,6 +6,7 @@ from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtGui import QPixmap, QIcon, QImage
 import numpy as np
 
+from Frontend.About import AboutPage
 # Import required classes from your modules
 from Virtual_Mouse import VirtualMouse
 from FaceDetection import FaceRecognitionApp
@@ -149,7 +150,7 @@ width: 200px;
         self.mobile_camera_radio.setStyleSheet(style_sheet)
 
         # self.button1.clicked.connect(self.on_icon_button1_clicked)
-        # self.button2.clicked.connect(self.on_icon_button2_clicked)
+        self.button2.clicked.connect(self.about)
         self.button3.clicked.connect(self.setting)
         self.button4.clicked.connect(self.logout)
         self.start_button.clicked.connect(self.start_hand_tracking)
@@ -212,6 +213,17 @@ width: 200px;
                 self.show()
         except Exception as e:
             print(f"An error occurred while opening the settings page: {e}")
+
+    def about(self):
+        try:
+            self.hide()
+            about_app = AboutPage(parent=self)  # Create an instance of AboutPage
+            result = about_app.exec_()
+            if result == QDialog.Accepted:
+                self.show()
+        except Exception as e:
+            print(f"An error occurred while opening the About page: {e}")
+
     def set_laptop_camera_mode(self):
         self.virtual_mouse.set_camera_mode("laptop")
 

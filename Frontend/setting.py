@@ -7,6 +7,8 @@ from PyQt5.QtGui import QPixmap, QIcon
 from Commands import gesture_mapping
 from Database import DatabaseHandler
 from FaceDetection import FaceRecognitionApp
+from Frontend.About import AboutPage
+
 
 class SettingsPage(QDialog):
     def __init__(self, virtual_mouse, current_user, parent=None):
@@ -271,6 +273,17 @@ class SettingsPage(QDialog):
         main_layout.addLayout(right_layout)
 
         self.setLayout(main_layout)
+
+    def about(self):
+        try:
+            self.hide()
+            about_app = AboutPage(parent=self)  # Create an instance of AboutPage
+            #self.about_app.show()  # Show the AboutPage widget
+            result = about_app.exec_()
+            if result == QDialog.Accepted:
+                self.show()
+        except Exception as e:
+            print(f"An error occurred while opening the About page: {e}")
 
     def populate_comboboxes(self):
         default_text = "Select Gesture Command"

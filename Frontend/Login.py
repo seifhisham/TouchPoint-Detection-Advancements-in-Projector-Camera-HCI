@@ -63,7 +63,7 @@ class LoginApp(QWidget):
         # Create widgets
         self.wlabel = QLabel("Welcome back!")
         self.dlable = QLabel("Enter your credentials to access your account")
-        self.username_label = QLabel("Email Address")
+        self.username_label = QLabel("Username")
         self.username_label.setMaximumWidth(200)
         self.username_input = QLineEdit()
         self.username_input.setFixedWidth(300)
