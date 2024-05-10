@@ -116,6 +116,28 @@ class SettingsPage(QDialog):
                 height: 20px; 
             }
         """
+
+        delete_account_stylesheet = """
+            QPushButton {
+                background-color: red;          /* Set button background to red */
+                color: white;                   /* Text color */
+                font-size: 14px;                /* Font size */
+                font-weight: bold;              /* Font weight */
+                padding: 8px 20px;              /* Adjusted padding to fit text */
+                margin-bottom: 43px;
+                margin-right: 100px;
+                border: 2px solid red;          /* Red border */
+                border-radius: 10px;            /* Rounded corners */
+                min-width: 100px;               /* Minimum width to fit text */
+            }
+
+            QPushButton:hover {
+                background-color: darkred;      /* Darker red on hover */
+                border: 2px solid darkred;
+            }
+        """
+
+
         self.virtual_mouse = virtual_mouse
         # Get the Current user logged in
         self.current_user = current_user
@@ -164,6 +186,9 @@ class SettingsPage(QDialog):
         self.button2.setStyleSheet(style_sheet)
         self.button3.setStyleSheet(style_sheet)
         self.button4.setStyleSheet(style_sheet)
+        self.delete_account_button = QPushButton("Delete Account")
+        self.delete_account_button.setStyleSheet(delete_account_stylesheet)
+        self.delete_account_button.clicked.connect(self.deleteAccount)
 
         self.button1.clicked.connect(self.handleControlPage)
         self.button4.clicked.connect(self.logout)
@@ -195,7 +220,7 @@ class SettingsPage(QDialog):
         select_action_layout.addStretch(1)
 
         icon_label2 = QLabel()
-        pixmap2 = QPixmap("../Images/Gesture2.jpeg")
+        pixmap2 = QPixmap("../Images/Gesture2.1.png")
         icon_label2.setPixmap(pixmap2.scaled(50, 50))
         select_action_layout.addWidget(icon_label2)
         self.mode_combobox2 = QComboBox(self)
@@ -233,7 +258,11 @@ class SettingsPage(QDialog):
         empbox.addStretch(1)
         right_layout.addLayout(empbox)
         right_layout.addStretch(1)
-        right_layout.addWidget(self.switch_customized_actions_button, alignment=Qt.AlignRight)
+        button_layout = QHBoxLayout()
+        button_layout.addWidget(self.delete_account_button)
+        button_layout.addWidget(self.switch_customized_actions_button)
+        button_layout.setAlignment(Qt.AlignRight)
+        right_layout.addLayout(button_layout)
         right_layout.addLayout(enable_features_layout)
         right_layout.addLayout(select_action_layout)
 
@@ -304,6 +333,7 @@ class SettingsPage(QDialog):
 
             # Update the gestures for the current user in the database
             db_handler.update_gestures(self.current_user, gesture1, gesture2, gesture3)
+            QMessageBox.information(self, "Gestures Saved", "Gestures Saved successfully!")
 
             if not os.path.exists(self.db_path):
                 print(f"Database file not found: {self.db_path}")
@@ -315,5 +345,24 @@ class SettingsPage(QDialog):
             self.accept()
         except Exception as e:
             print(f"Error occurred during Save button click: {e}")
+
+    def deleteAccount(self):
+        confirmation = QMessageBox.question(self, "Delete Account",
+                                            "Are you sure you want to delete your account?",
+                                            QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+
+        if confirmation == QMessageBox.Yes:
+            try:
+                # Access DatabaseHandler to delete the user
+                if self.database.delete_user(self.current_user):
+                    QMessageBox.information(self, "Account Deleted",
+                                            "Your account has been deleted successfully.")
+                    self.logout()  # Close the settings page after deletion
+                else:
+                    QMessageBox.warning(self, "Deletion Failed",
+                                        "Failed to delete account. Please try again.")
+            except Exception as e:
+                QMessageBox.warning(self, "Deletion Failed",
+                                    f"Error deleting account: {e}")
     def logout(self):
         self.close()

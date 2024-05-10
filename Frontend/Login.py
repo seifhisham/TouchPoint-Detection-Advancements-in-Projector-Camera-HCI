@@ -119,7 +119,6 @@ class LoginApp(QWidget):
 
         # Connect button signals to slots
         self.login_button.clicked.connect(self.login)
-        self.login_button.clicked.connect(self.login)
         self.signup_button.clicked.connect(self.open_signup_page)
 
 

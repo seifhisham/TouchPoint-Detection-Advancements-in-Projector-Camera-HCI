@@ -105,3 +105,39 @@ class DatabaseHandler:
         except Exception as e:
             print(f"Error fetching user data: {e}")
             return None
+
+    def delete_user(self, username):
+        try:
+            connection = sqlite3.connect(self.database_path)
+            cursor = connection.cursor()
+
+            # Delete the user from the database
+            cursor.execute('''
+                DELETE FROM users
+                WHERE username = ?
+            ''', (username,))
+
+            connection.commit()
+            connection.close()
+            print(f"User '{username}' deleted from the database.")
+            return True
+        except Exception as e:
+            print(f"Error deleting user: {e}")
+            return False
+
+    def user_exists(self, username):
+        try:
+            connection = sqlite3.connect(self.database_path)
+            cursor = connection.cursor()
+
+            # Execute SQL query to check if the user exists
+            cursor.execute("SELECT * FROM users WHERE username=?", (username,))
+            result = cursor.fetchone()  # Fetch one row (if exists)
+
+            connection.close()  # Close the database connection
+
+            # Return True if result is not None (user exists), otherwise False
+            return result is not None
+        except Exception as e:
+            print(f"Error checking user existence: {e}")
+            return False  # Return False in case of any error or exception
