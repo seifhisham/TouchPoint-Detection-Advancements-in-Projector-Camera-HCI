@@ -9,6 +9,11 @@ from homography_mapping import calibrate_homography
 from preprocessing import preprocess_image
 from camera_input import CameraInput
 
+from ctypes import cast, POINTER
+from comtypes import CLSCTX_ALL
+from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
+
+
 class VirtualMouse:
     def __init__(self, app):
         self.app = app
@@ -19,6 +24,8 @@ class VirtualMouse:
         self.homography_enabled = False
         self.screen_points = []
         self.calibrated = False
+
+        self.saved_volume = 0
 
         self.detector = handDetector(maxHands=1)
         self.prev_fingers_touching = False
@@ -97,6 +104,30 @@ class VirtualMouse:
                 print("Gesture not found in mapping.")
         else:
             print("No selected gesture.")
+
+    def control_volume(self, length, fingers):
+        devices = AudioUtilities.GetSpeakers()
+        interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
+        volume = cast(interface, POINTER(IAudioEndpointVolume))
+
+        volRange = volume.GetVolumeRange()
+        minVol = volRange[0]
+        maxVol = volRange[1]
+
+        volPer = np.interp(length, [50, 200], [0, 100])
+        volPer = round(volPer)  # Round to nearest integer for percentage
+
+        # If pinky is down, set the volume percentage
+        if not fingers[4]:
+            volume.SetMasterVolumeLevelScalar(volPer / 100, None)
+        else:
+            # If pinky is up, revert to the previous volume level
+            volume.SetMasterVolumeLevelScalar(self.saved_volume / 100, None)
+
+        # Store the current volume level if all fingers are closed
+        if all(not finger for finger in fingers):
+            self.saved_volume = volume.GetMasterVolumeLevelScalar() * 100
+
     def hand_tracking_loop(self):
         pTime = 0
         width, height = 640, 480
@@ -135,8 +166,15 @@ class VirtualMouse:
                 roi_y2 = min(height, roi_center[1] + roi_radius)
 
                 fingers = self.detector.fingersUp()
+                length, img, lineInfo = self.detector.findDistance(4, 8, img)
 
                 cv2.rectangle(img, (roi_x1, roi_y1), (roi_x2, roi_y2), (255, 0, 255), 2)
+
+                if fingers[0] == 1 and fingers[1] == 1:
+                    try:
+                        self.control_volume(length, fingers)
+                    except Exception as e:
+                        print(f"An error occurred while controlling volume: {e}")
 
                 if fingers[1] == 1 and fingers[2] == 0:
                     x3 = np.interp(roi_center[0], (frameR, width - frameR), (0, screen_width))

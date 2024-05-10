@@ -150,11 +150,20 @@ class SignupApp(QDialog):
         elif password != confirm_password:
             QMessageBox.warning(self, "Sign up Failed", "Passwords do not match. Please try again.")
         else:
-            self.db_handler.add_user(username, password)
-            QMessageBox.information(self, "Account Created", "Account created successfully!")
-            tracking_app = HandTrackingApp(username)
-            tracking_app.show()
-            self.hide()
+            try:
+                # Check if the user already exists
+                if self.db_handler.user_exists(username):
+                    QMessageBox.warning(self, "Sign up Failed",
+                                        "Username already exists. Please choose a different username.")
+                else:
+                    # Add the user to the database
+                    self.db_handler.add_user(username, password)
+                    QMessageBox.information(self, "Account Created", "Account created successfully!")
+                    tracking_app = HandTrackingApp(username)
+                    tracking_app.show()
+                    self.hide()
+            except Exception as e:
+                QMessageBox.warning(self, "Sign up Failed", f"Error occurred: {e}")
 
     def upload_face_image(self):
         options = QFileDialog.Options()
